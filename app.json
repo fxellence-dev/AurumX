@@ -18,7 +18,9 @@
       "infoPlist": {
         "CFBundleURLTypes": [
           {
-            "CFBundleURLSchemes": ["com.aurumx.mobile"]
+            "CFBundleURLSchemes": [
+              "com.aurumx.mobile"
+            ]
           }
         ]
       }
@@ -41,7 +43,8 @@
             "kotlinVersion": "1.7.22"
           }
         }
-      ]
+      ],
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true
