@@ -29,9 +29,10 @@ export default function MainTabNavigator() {
           shadowOpacity: 0,
           borderBottomWidth: 1,
           borderBottomColor: colors.background.tertiary,
+          height: 60,
         },
         headerTitleStyle: {
-          fontSize: 18,
+          fontSize: 17,
           fontWeight: '600',
           color: colors.text.primary,
         },
@@ -55,7 +56,7 @@ export default function MainTabNavigator() {
         name="Comparator"
         component={ComparatorScreen}
         options={{
-          title: 'Compare',
+          title: '',
           tabBarLabel: 'Compare',
           tabBarIcon: ({ focused, color }) => (
             <Scale 
@@ -71,7 +72,7 @@ export default function MainTabNavigator() {
         name="LiveRates"
         component={LiveRatesScreen}
         options={{
-          title: 'Live Rates',
+          title: '',
           tabBarLabel: 'Rates',
           tabBarIcon: ({ focused, color }) => (
             <TrendingUp 
@@ -87,7 +88,7 @@ export default function MainTabNavigator() {
         name="Alerts"
         component={AlertsScreen}
         options={{
-          title: 'Price Alerts',
+          title: '',
           tabBarLabel: 'Alerts',
           tabBarIcon: ({ focused, color }) => (
             <Bell 
@@ -103,7 +104,7 @@ export default function MainTabNavigator() {
         name="Profile"
         component={ProfileScreen}
         options={{
-          title: 'Profile',
+          title: '',
           tabBarLabel: 'Profile',
           tabBarIcon: ({ focused, color }) => (
             <User 
