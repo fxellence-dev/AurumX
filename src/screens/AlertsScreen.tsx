@@ -3,7 +3,7 @@
  * Manage gold price alerts with Google authentication
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
   Text,
@@ -21,6 +21,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { TradingViewMiniWidget } from '@/components/TradingViewMiniWidget';
 import { CreateAlertModal } from '@/components/CreateAlertModal';
 import { useCustomAlert } from '@/components/CustomAlert';
+import { AlertListItem } from '@/components/AlertListItem';
+import { supabase } from '@/lib/supabase';
+import type { GoldRateAlert } from '@/types/database';
 
 // Gold symbols matching Live Rates screen
 const GOLD_SYMBOLS = [
@@ -30,12 +33,21 @@ const GOLD_SYMBOLS = [
   { symbol: 'ICMARKETS:XAUEUR', code: 'EUR', flag: '🇪🇺', name: 'Euro' },
 ];
 
+const ALERTS_PER_PAGE = 5;
+
 export default function AlertsScreen({ navigation }: MainTabScreenProps<'Alerts'>) {
   const { user, loading, signInWithGoogle, signOut } = useAuth();
   const { showAlert, AlertComponent } = useCustomAlert();
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [selectedCurrency, setSelectedCurrency] = useState(0); // Index of selected currency
   const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
+  
+  // Alerts state
+  const [alerts, setAlerts] = useState<GoldRateAlert[]>([]);
+  const [isLoadingAlerts, setIsLoadingAlerts] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [currentPage, setCurrentPage] = useState(0);
 
   const handleSignIn = async () => {
     try {
@@ -79,6 +91,90 @@ export default function AlertsScreen({ navigation }: MainTabScreenProps<'Alerts'
       ]
     );
   };
+
+  // Fetch alerts from Supabase
+  const fetchAlerts = async (page: number = 0) => {
+    if (!user) return;
+
+    const isInitialLoad = page === 0;
+    if (isInitialLoad) {
+      setIsLoadingAlerts(true);
+      setAlerts([]);
+      setCurrentPage(0);
+      setHasMore(true);
+    } else {
+      setIsLoadingMore(true);
+    }
+
+    try {
+      const from = page * ALERTS_PER_PAGE;
+      const to = from + ALERTS_PER_PAGE - 1;
+
+      console.log(`Fetching alerts: page ${page}, from ${from} to ${to}`);
+
+      const { data, error, count } = await supabase
+        .from('gold_rate_alerts')
+        .select('*', { count: 'exact' })
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .range(from, to);
+
+      if (error) {
+        console.error('Error fetching alerts:', error);
+        throw error;
+      }
+
+      console.log(`Fetched ${data?.length || 0} alerts, total count: ${count}`);
+
+      if (isInitialLoad) {
+        setAlerts(data || []);
+      } else {
+        setAlerts(prev => [...prev, ...(data || [])]);
+      }
+
+      // Check if there are more alerts to load
+      const totalFetched = isInitialLoad ? (data?.length || 0) : alerts.length + (data?.length || 0);
+      setHasMore(totalFetched < (count || 0));
+      setCurrentPage(page);
+
+    } catch (error) {
+      console.error('Failed to fetch alerts:', error);
+      showAlert('error', 'Error', 'Failed to load alerts. Please try again.');
+    } finally {
+      setIsLoadingAlerts(false);
+      setIsLoadingMore(false);
+    }
+  };
+
+  // Load more alerts
+  const loadMoreAlerts = () => {
+    if (!isLoadingMore && hasMore) {
+      fetchAlerts(currentPage + 1);
+    }
+  };
+
+  // Refresh alerts after creating a new one
+  const handleAlertCreated = () => {
+    console.log('Alert created, refreshing list...');
+    fetchAlerts(0);
+  };
+
+  // Handle alert deletion
+  const handleAlertDeleted = (alertId: string) => {
+    console.log('Alert deleted, removing from list:', alertId);
+    setAlerts((prevAlerts) => prevAlerts.filter((alert) => alert.id !== alertId));
+  };
+
+  // Load alerts when user signs in
+  useEffect(() => {
+    if (user && !loading) {
+      fetchAlerts(0);
+    } else {
+      setAlerts([]);
+      setCurrentPage(0);
+      setHasMore(true);
+    }
+  }, [user, loading]);
 
   // Loading state
   if (loading) {
@@ -245,24 +341,63 @@ export default function AlertsScreen({ navigation }: MainTabScreenProps<'Alerts'
           </TouchableOpacity>
         </View>
 
-        {/* Coming Soon - Alert Management */}
-        <View style={styles.comingSoonCard}>
-          <Bell size={48} color={colors.text.tertiary} strokeWidth={2} />
-          <Text style={styles.comingSoonTitle}>Alert Management Coming Soon</Text>
-          <Text style={styles.comingSoonDescription}>
-            Create and manage price alerts for different markets. Get notified via email when prices hit your targets.
-          </Text>
-        </View>
+        {/* Alerts List */}
+        {isLoadingAlerts ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={colors.gold[500]} />
+            <Text style={styles.loadingText}>Loading alerts...</Text>
+          </View>
+        ) : alerts.length === 0 ? (
+          <View style={styles.emptyState}>
+            <Bell size={48} color={colors.text.tertiary} strokeWidth={2} />
+            <Text style={styles.emptyStateTitle}>No Alerts Yet</Text>
+            <Text style={styles.emptyStateDescription}>
+              Create your first price alert to get notified when gold prices meet your target.
+            </Text>
+          </View>
+        ) : (
+          <>
+            {/* Alert Items */}
+            {alerts.map((alert) => (
+              <AlertListItem
+                key={alert.id}
+                alert={alert}
+                onToggle={(id, enabled) => {
+                  // Update local state
+                  setAlerts(prev =>
+                    prev.map(a => (a.id === id ? { ...a, enabled } : a))
+                  );
+                }}
+                onDelete={handleAlertDeleted}
+              />
+            ))}
+
+            {/* Load More Button */}
+            {hasMore && (
+              <TouchableOpacity
+                style={styles.loadMoreButton}
+                onPress={loadMoreAlerts}
+                disabled={isLoadingMore}
+              >
+                {isLoadingMore ? (
+                  <ActivityIndicator size="small" color={colors.gold[500]} />
+                ) : (
+                  <>
+                    <Text style={styles.loadMoreText}>Load More Alerts</Text>
+                    <Text style={styles.loadMoreSubtext}>Show next 5</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            )}
+          </>
+        )}
       </ScrollView>
 
       {/* Create Alert Modal */}
       <CreateAlertModal
         visible={isCreateModalVisible}
         onClose={() => setIsCreateModalVisible(false)}
-        onSuccess={() => {
-          // TODO: Refresh alerts list
-          console.log('Alert created successfully');
-        }}
+        onSuccess={handleAlertCreated}
       />
 
       {/* Custom Alert Component */}
@@ -530,5 +665,45 @@ const styles = StyleSheet.create({
     color: colors.text.tertiary,
     textAlign: 'center',
     lineHeight: 16,
+  },
+  // Alerts List Styles
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: 48,
+    paddingHorizontal: 32,
+  },
+  emptyStateTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.text.primary,
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  emptyStateDescription: {
+    fontSize: 14,
+    color: colors.text.secondary,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  loadMoreButton: {
+    backgroundColor: colors.background.secondary,
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 8,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: colors.border.default,
+  },
+  loadMoreText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.gold[500],
+    marginBottom: 2,
+  },
+  loadMoreSubtext: {
+    fontSize: 12,
+    color: colors.text.tertiary,
   },
 });

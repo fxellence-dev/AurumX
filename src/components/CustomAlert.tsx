@@ -127,7 +127,7 @@ export function CustomAlert({
                     <Text style={styles.buttonTextPrimary}>{button.text}</Text>
                   </LinearGradient>
                 ) : button.style === 'cancel' ? (
-                  <View style={styles.buttonCancel}>
+                  <View style={styles.buttonContent}>
                     <Text style={styles.buttonTextSecondary}>{button.text}</Text>
                   </View>
                 ) : (
@@ -273,6 +273,8 @@ const styles = StyleSheet.create({
   },
   buttonCancel: {
     backgroundColor: colors.background.secondary,
+  },
+  buttonContent: {
     paddingVertical: 16,
     alignItems: 'center',
     justifyContent: 'center',
