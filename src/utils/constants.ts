@@ -6,7 +6,7 @@
 /**
  * Currency types supported by the app
  */
-export const CURRENCIES = ['GBP', 'USD', 'INR'] as const;
+export const CURRENCIES = ['GBP', 'USD', 'INR', 'EUR'] as const;
 export type Currency = typeof CURRENCIES[number];
 
 /**
@@ -43,6 +43,7 @@ export const FX_RATES: Record<Currency, number> = {
   'GBP': 1.0,
   'USD': 0.79,      // 1 USD = 0.79 GBP (example - update with actual rate)
   'INR': 0.0097,    // 1 INR = 0.0097 GBP (example - update with actual rate)
+  'EUR': 0.85,      // 1 EUR = 0.85 GBP (example - update with actual rate)
 };
 
 /**
@@ -52,6 +53,7 @@ export const CURRENCY_SYMBOLS: Record<Currency, string> = {
   'GBP': '£',
   'USD': '$',
   'INR': '₹',
+  'EUR': '€',
 };
 
 /**
@@ -61,6 +63,7 @@ export const CURRENCY_NAMES: Record<Currency, string> = {
   'GBP': 'British Pound',
   'USD': 'US Dollar',
   'INR': 'Indian Rupee',
+  'EUR': 'Euro',
 };
 
 /**

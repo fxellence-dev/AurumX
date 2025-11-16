@@ -5,6 +5,7 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
+    "scheme": "aurumx",
     "splash": {
       "resizeMode": "contain",
       "backgroundColor": "#0A0A0B"
@@ -19,6 +20,7 @@
         "CFBundleURLTypes": [
           {
             "CFBundleURLSchemes": [
+              "aurumx",
               "com.aurumx.mobile"
             ]
           }
@@ -29,6 +31,20 @@
       "package": "com.aurumx.mobile",
       "permissions": [
         "android.permission.VIBRATE"
+      ],
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "data": [
+            {
+              "scheme": "aurumx"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        }
       ]
     },
     "web": {

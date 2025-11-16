@@ -12,7 +12,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
-import { supabase } from '@/lib/supabase';
+import { supabase, ExpoSecureStoreAdapter } from '@/lib/supabase';
 
 // Configure WebBrowser for OAuth
 WebBrowser.maybeCompleteAuthSession();
@@ -43,59 +43,192 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Listen for auth changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('🔄 Auth state changed:', event, session?.user?.email || 'No user');
       setSession(session);
       setUser(session?.user ?? null);
+      setLoading(false);
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
+  // Handle deep links for OAuth callback
+  useEffect(() => {
+    const handleDeepLink = async (event: { url: string }) => {
+      const url = event.url;
+      
+      // Check if this is an auth callback
+      if (url?.includes('auth/callback')) {
+        const urlObj = new URL(url);
+        const access_token = urlObj.searchParams.get('access_token');
+        const refresh_token = urlObj.searchParams.get('refresh_token');
+
+        if (access_token && refresh_token) {
+          // Set the session with the tokens
+          const { error } = await supabase.auth.setSession({
+            access_token,
+            refresh_token,
+          });
+
+          if (error) {
+            console.error('Error setting session:', error);
+          }
+        }
+      }
+    };
+
+    // Listen for deep links
+    const subscription = Linking.addEventListener('url', handleDeepLink);
+
+    // Check if app was opened with a deep link
+    Linking.getInitialURL().then((url) => {
+      if (url) {
+        handleDeepLink({ url });
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, []);
+
   const signInWithGoogle = async () => {
     try {
-      const redirectUrl = Linking.createURL('auth/callback');
+      // Use the custom scheme for mobile app
+      const redirectUrl = 'aurumx://auth/callback';
+      console.log('🔗 Mobile redirect URL:', redirectUrl);
       
+      // Generate the OAuth URL with the mobile redirect
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: redirectUrl,
-          skipBrowserRedirect: false,
+          skipBrowserRedirect: true, // Important: we handle the redirect manually
         },
       });
 
-      if (error) throw error;
+      console.log('📱 OAuth URL:', data?.url);
+
+      if (error) {
+        console.error('OAuth error:', error);
+        throw error;
+      }
 
       if (data?.url) {
+        // Open the OAuth URL in browser with our custom redirect scheme
         const result = await WebBrowser.openAuthSessionAsync(
           data.url,
           redirectUrl
         );
 
-        if (result.type === 'success') {
-          const url = result.url;
-          const params = new URL(url).searchParams;
-          const accessToken = params.get('access_token');
-          const refreshToken = params.get('refresh_token');
+        console.log('🔙 Browser result:', result.type);
 
-          if (accessToken && refreshToken) {
-            await supabase.auth.setSession({
-              access_token: accessToken,
-              refresh_token: refreshToken,
-            });
+        if (result.type === 'success' && result.url) {
+          console.log('✅ Success! Callback URL:', result.url);
+          
+          // Extract the hash fragment which contains the tokens
+          const url = result.url;
+          let access_token = null;
+          let refresh_token = null;
+
+          // Tokens might be in hash fragment (#) or query params (?)
+          if (url.includes('#')) {
+            const hashParts = url.split('#')[1];
+            const params = new URLSearchParams(hashParts);
+            access_token = params.get('access_token');
+            refresh_token = params.get('refresh_token');
+          } else if (url.includes('?')) {
+            const urlObj = new URL(url);
+            access_token = urlObj.searchParams.get('access_token');
+            refresh_token = urlObj.searchParams.get('refresh_token');
           }
+
+          console.log('🔑 Has access_token:', !!access_token);
+          console.log('🔑 Has refresh_token:', !!refresh_token);
+
+          if (access_token && refresh_token) {
+            const { error: sessionError } = await supabase.auth.setSession({
+              access_token,
+              refresh_token,
+            });
+
+            if (sessionError) {
+              console.error('❌ Error setting session:', sessionError);
+              throw sessionError;
+            }
+            
+            console.log('✅ Session set successfully!');
+          } else {
+            console.error('❌ No tokens found in callback URL');
+          }
+        } else if (result.type === 'cancel') {
+          console.log('⚠️ User cancelled sign in');
+        } else {
+          console.log('❌ Unexpected result type:', result.type);
         }
       }
     } catch (error) {
-      console.error('Sign in error:', error);
+      console.error('❌ Sign in error:', error);
       throw error;
     }
   };
 
   const signOut = async () => {
     try {
-      await supabase.auth.signOut();
+      console.log('🔓 Signing out...');
+      console.log('Current session:', session?.user?.email);
+      
+      // Sign out from Supabase (this clears the session from SecureStore)
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        console.error('❌ Sign out error:', error);
+        
+        // If error is about missing session, that means we're already signed out
+        // But we still need to clear SecureStore manually
+        if (error.message?.includes('session missing') || error.message?.includes('No session') || error.name === 'AuthSessionMissingError') {
+          console.log('⚠️ Session already cleared from memory, manually clearing SecureStore');
+          
+          // Manually clear auth storage using the storage adapter
+          try {
+            // Get the Supabase project reference from the URL
+            const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || '';
+            const projectRef = supabaseUrl.split('//')[1]?.split('.')[0];
+            
+            if (projectRef) {
+              // Supabase default storage key format: sb-<project-ref>-auth-token
+              const storageKey = `sb-${projectRef}-auth-token`;
+              console.log('Clearing storage key:', storageKey);
+              await ExpoSecureStoreAdapter.removeItem(storageKey);
+              console.log('✅ SecureStore cleared manually');
+            } else {
+              console.error('Could not determine project ref from URL');
+            }
+          } catch (storeError) {
+            console.error('Error clearing SecureStore:', storeError);
+          }
+          
+          setSession(null);
+          setUser(null);
+          return; // Don't throw error, this is not a critical failure
+        }
+        
+        throw error;
+      }
+      
+      console.log('✅ Signed out successfully from Supabase');
+      
+      // Manually update state to ensure immediate UI update
+      // The onAuthStateChange listener should also fire, but this ensures responsiveness
+      setSession(null);
+      setUser(null);
+      console.log('✅ Local state cleared');
     } catch (error) {
       console.error('Sign out error:', error);
+      // Clear state even on error to prevent stuck logged-in state
+      setSession(null);
+      setUser(null);
       throw error;
     }
   };
