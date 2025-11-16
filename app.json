@@ -6,7 +6,9 @@
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "scheme": "aurumx",
+    "icon": "./assets/icon.png",
     "splash": {
+      "image": "./assets/icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#0A0A0B"
     },
@@ -16,6 +18,8 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.aurumx.mobile",
+      "buildNumber": "1",
+      "icon": "./assets/icon.png",
       "infoPlist": {
         "CFBundleURLTypes": [
           {
@@ -23,8 +27,15 @@
               "aurumx",
               "com.aurumx.mobile"
             ]
+          },
+          {
+            "CFBundleURLSchemes": [
+              "aurumx",
+              "com.aurumx.mobile"
+            ]
           }
-        ]
+        ],
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -67,8 +78,9 @@
     },
     "extra": {
       "eas": {
-        "projectId": "your-eas-project-id"
+        "projectId": "c5dc4f76-463d-4db0-800e-59af980d8ef6"
       }
-    }
+    },
+    "owner": "amitmahajan78"
   }
 }

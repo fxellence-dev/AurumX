@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AurumX Icon Preview</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a1b 0%, #0a0a0b 100%);
+            color: #fff;
+            padding: 40px 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #FFD700 0%, #D4AF37 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 2.5em;
+        }
+        
+        p {
+            text-align: center;
+            color: #999;
+            margin-bottom: 40px;
+        }
+        
+        .preview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 30px;
+            margin-top: 40px;
+        }
+        
+        .preview-item {
+            background: #1a1a1b;
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+            border: 1px solid #333;
+        }
+        
+        .preview-item h3 {
+            color: #D4AF37;
+            margin-bottom: 20px;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .icon-preview {
+            background: #000;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 22.37%;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+        
+        .size-1024 { width: 200px; height: 200px; }
+        .size-180 { width: 180px; height: 180px; }
+        .size-120 { width: 120px; height: 120px; }
+        .size-80 { width: 80px; height: 80px; }
+        .size-60 { width: 60px; height: 60px; }
+        .size-40 { width: 40px; height: 40px; }
+        
+        .dimensions {
+            color: #666;
+            font-size: 0.8em;
+            margin-top: 10px;
+        }
+        
+        .icon-svg {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .info-section {
+            background: #1a1a1b;
+            padding: 30px;
+            border-radius: 20px;
+            margin-top: 40px;
+            border: 1px solid #333;
+        }
+        
+        .info-section h2 {
+            color: #D4AF37;
+            margin-bottom: 20px;
+        }
+        
+        .info-section ol {
+            margin-left: 20px;
+            line-height: 2;
+        }
+        
+        .info-section li {
+            color: #ccc;
+        }
+        
+        .color-palette {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+        
+        .color-item {
+            text-align: center;
+        }
+        
+        .color-box {
+            width: 80px;
+            height: 80px;
+            border-radius: 10px;
+            margin-bottom: 5px;
+            border: 2px solid #333;
+        }
+        
+        .color-label {
+            font-size: 0.7em;
+            color: #999;
+        }
+        
+        .color-code {
+            font-size: 0.8em;
+            color: #D4AF37;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>AurumX App Icon Preview</h1>
+        <p>See how your icon looks at different sizes</p>
+        
+        <div class="preview-grid">
+            <div class="preview-item">
+                <h3>App Store</h3>
+                <div class="icon-preview size-1024">
+                    <svg class="icon-svg" viewBox="0 0 1024 1024">
+                        <rect width="1024" height="1024" fill="#0A0A0B"/>
+                        <defs>
+                            <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:#FFD700"/>
+                                <stop offset="50%" style="stop-color:#D4AF37"/>
+                                <stop offset="100%" style="stop-color:#F4D03F"/>
+                            </linearGradient>
+                        </defs>
+                        <rect x="262" y="212" width="500" height="500" fill="none" stroke="#D4AF37" stroke-width="6" rx="60"/>
+                        <text x="512" y="520" font-family="Arial" font-size="320" font-weight="bold" fill="url(#goldGrad)" text-anchor="middle">AU</text>
+                        <text x="512" y="640" font-family="Arial" font-size="110" fill="#D4AF37" text-anchor="middle">79</text>
+                    </svg>
+                </div>
+                <div class="dimensions">1024x1024</div>
+            </div>
+            
+            <div class="preview-item">
+                <h3>iPhone Home</h3>
+                <div class="icon-preview size-180">
+                    <svg class="icon-svg" viewBox="0 0 1024 1024">
+                        <rect width="1024" height="1024" fill="#0A0A0B"/>
+                        <defs>
+                            <linearGradient id="goldGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:#FFD700"/>
+                                <stop offset="50%" style="stop-color:#D4AF37"/>
+                                <stop offset="100%" style="stop-color:#F4D03F"/>
+                            </linearGradient>
+                        </defs>
+                        <rect x="262" y="212" width="500" height="500" fill="none" stroke="#D4AF37" stroke-width="6" rx="60"/>
+                        <text x="512" y="520" font-family="Arial" font-size="320" font-weight="bold" fill="url(#goldGrad2)" text-anchor="middle">AU</text>
+                        <text x="512" y="640" font-family="Arial" font-size="110" fill="#D4AF37" text-anchor="middle">79</text>
+                    </svg>
+                </div>
+                <div class="dimensions">180x180 (60x60@3x)</div>
+            </div>
+            
+            <div class="preview-item">
+                <h3>Spotlight</h3>
+                <div class="icon-preview size-120">
+                    <svg class="icon-svg" viewBox="0 0 1024 1024">
+                        <rect width="1024" height="1024" fill="#0A0A0B"/>
+                        <defs>
+                            <linearGradient id="goldGrad3" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:#FFD700"/>
+                                <stop offset="50%" style="stop-color:#D4AF37"/>
+                                <stop offset="100%" style="stop-color:#F4D03F"/>
+                            </linearGradient>
+                        </defs>
+                        <rect x="262" y="212" width="500" height="500" fill="none" stroke="#D4AF37" stroke-width="6" rx="60"/>
+                        <text x="512" y="520" font-family="Arial" font-size="320" font-weight="bold" fill="url(#goldGrad3)" text-anchor="middle">AU</text>
+                        <text x="512" y="640" font-family="Arial" font-size="110" fill="#D4AF37" text-anchor="middle">79</text>
+                    </svg>
+                </div>
+                <div class="dimensions">120x120 (40x40@3x)</div>
+            </div>
+            
+            <div class="preview-item">
+                <h3>Settings</h3>
+                <div class="icon-preview size-80">
+                    <svg class="icon-svg" viewBox="0 0 1024 1024">
+                        <rect width="1024" height="1024" fill="#0A0A0B"/>
+                        <defs>
+                            <linearGradient id="goldGrad4" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:#FFD700"/>
+                                <stop offset="50%" style="stop-color:#D4AF37"/>
+                                <stop offset="100%" style="stop-color:#F4D03F"/>
+                            </linearGradient>
+                        </defs>
+                        <rect x="262" y="212" width="500" height="500" fill="none" stroke="#D4AF37" stroke-width="6" rx="60"/>
+                        <text x="512" y="520" font-family="Arial" font-size="320" font-weight="bold" fill="url(#goldGrad4)" text-anchor="middle">AU</text>
+                        <text x="512" y="640" font-family="Arial" font-size="110" fill="#D4AF37" text-anchor="middle">79</text>
+                    </svg>
+                </div>
+                <div class="dimensions">87x87 (29x29@3x)</div>
+            </div>
+            
+            <div class="preview-item">
+                <h3>Notification</h3>
+                <div class="icon-preview size-60">
+                    <svg class="icon-svg" viewBox="0 0 1024 1024">
+                        <rect width="1024" height="1024" fill="#0A0A0B"/>
+                        <defs>
+                            <linearGradient id="goldGrad5" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:#FFD700"/>
+                                <stop offset="50%" style="stop-color:#D4AF37"/>
+                                <stop offset="100%" style="stop-color:#F4D03F"/>
+                            </linearGradient>
+                        </defs>
+                        <rect x="262" y="212" width="500" height="500" fill="none" stroke="#D4AF37" stroke-width="6" rx="60"/>
+                        <text x="512" y="520" font-family="Arial" font-size="320" font-weight="bold" fill="url(#goldGrad5)" text-anchor="middle">AU</text>
+                        <text x="512" y="640" font-family="Arial" font-size="110" fill="#D4AF37" text-anchor="middle">79</text>
+                    </svg>
+                </div>
+                <div class="dimensions">60x60 (20x20@3x)</div>
+            </div>
+            
+            <div class="preview-item">
+                <h3>Tiny</h3>
+                <div class="icon-preview size-40">
+                    <svg class="icon-svg" viewBox="0 0 1024 1024">
+                        <rect width="1024" height="1024" fill="#0A0A0B"/>
+                        <defs>
+                            <linearGradient id="goldGrad6" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:#FFD700"/>
+                                <stop offset="50%" style="stop-color:#D4AF37"/>
+                                <stop offset="100%" style="stop-color:#F4D03F"/>
+                            </linearGradient>
+                        </defs>
+                        <rect x="262" y="212" width="500" height="500" fill="none" stroke="#D4AF37" stroke-width="6" rx="60"/>
+                        <text x="512" y="520" font-family="Arial" font-size="320" font-weight="bold" fill="url(#goldGrad6)" text-anchor="middle">AU</text>
+                        <text x="512" y="640" font-family="Arial" font-size="110" fill="#D4AF37" text-anchor="middle">79</text>
+                    </svg>
+                </div>
+                <div class="dimensions">40x40</div>
+            </div>
+        </div>
+        
+        <div class="info-section">
+            <h2>🎨 Color Palette</h2>
+            <div class="color-palette">
+                <div class="color-item">
+                    <div class="color-box" style="background: #0A0A0B;"></div>
+                    <div class="color-label">Background</div>
+                    <div class="color-code">#0A0A0B</div>
+                </div>
+                <div class="color-item">
+                    <div class="color-box" style="background: #D4AF37;"></div>
+                    <div class="color-label">Gold Primary</div>
+                    <div class="color-code">#D4AF37</div>
+                </div>
+                <div class="color-item">
+                    <div class="color-box" style="background: #FFD700;"></div>
+                    <div class="color-label">Gold Bright</div>
+                    <div class="color-code">#FFD700</div>
+                </div>
+                <div class="color-item">
+                    <div class="color-box" style="background: #F4D03F;"></div>
+                    <div class="color-label">Gold Accent</div>
+                    <div class="color-code">#F4D03F</div>
+                </div>
+                <div class="color-item">
+                    <div class="color-box" style="background: #10B981;"></div>
+                    <div class="color-label">Success Green</div>
+                    <div class="color-code">#10B981</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="info-section">
+            <h2>📝 How to Create This Icon</h2>
+            <ol>
+                <li>Open <a href="https://www.figma.com" target="_blank" style="color: #D4AF37;">Figma.com</a> (free account)</li>
+                <li>Create a new frame: 1024x1024 pixels</li>
+                <li>Add dark background (#0A0A0B)</li>
+                <li>Create a square with rounded corners (500x500, stroke only)</li>
+                <li>Add "AU" text (320px, bold, gold gradient)</li>
+                <li>Add "79" text below (110px, gold #D4AF37)</li>
+                <li>Export as PNG (1024x1024)</li>
+                <li>Save to: <code>assets/icon.png</code></li>
+            </ol>
+        </div>
+    </div>
+</body>
+</html>
