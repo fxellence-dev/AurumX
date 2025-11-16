@@ -12,7 +12,6 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Image,
-  Alert,
 } from 'react-native';
 import type { MainTabScreenProps } from '@/navigation/types';
 import { colors } from '@/theme';
@@ -20,6 +19,8 @@ import { Bell, Plus, LogOut, TrendingUp } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '@/contexts/AuthContext';
 import { TradingViewMiniWidget } from '@/components/TradingViewMiniWidget';
+import { CreateAlertModal } from '@/components/CreateAlertModal';
+import { useCustomAlert } from '@/components/CustomAlert';
 
 // Gold symbols matching Live Rates screen
 const GOLD_SYMBOLS = [
@@ -31,8 +32,10 @@ const GOLD_SYMBOLS = [
 
 export default function AlertsScreen({ navigation }: MainTabScreenProps<'Alerts'>) {
   const { user, loading, signInWithGoogle, signOut } = useAuth();
+  const { showAlert, AlertComponent } = useCustomAlert();
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [selectedCurrency, setSelectedCurrency] = useState(0); // Index of selected currency
+  const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
 
   const handleSignIn = async () => {
     try {
@@ -40,10 +43,10 @@ export default function AlertsScreen({ navigation }: MainTabScreenProps<'Alerts'
       await signInWithGoogle();
     } catch (error) {
       console.error('Sign in failed:', error);
-      Alert.alert(
+      showAlert(
+        'error',
         'Sign In Failed',
-        'Unable to sign in with Google. Please try again.',
-        [{ text: 'OK' }]
+        'Unable to sign in with Google. Please try again.'
       );
     } finally {
       setIsSigningIn(false);
@@ -51,7 +54,8 @@ export default function AlertsScreen({ navigation }: MainTabScreenProps<'Alerts'
   };
 
   const handleSignOut = async () => {
-    Alert.alert(
+    showAlert(
+      'warning',
       'Sign Out',
       'Are you sure you want to sign out?',
       [
@@ -67,7 +71,7 @@ export default function AlertsScreen({ navigation }: MainTabScreenProps<'Alerts'
               console.error('Sign out failed:', error);
               // Don't show error alert for "session missing" errors as they're handled gracefully
               if (!error?.message?.includes('session missing') && error?.name !== 'AuthSessionMissingError') {
-                Alert.alert('Error', 'Failed to sign out. Please try again.');
+                showAlert('error', 'Error', 'Failed to sign out. Please try again.');
               }
             }
           },
@@ -233,7 +237,10 @@ export default function AlertsScreen({ navigation }: MainTabScreenProps<'Alerts'
             <Bell size={20} color={colors.gold[500]} />
             <Text style={styles.sectionTitle}>My Alerts</Text>
           </View>
-          <TouchableOpacity style={styles.addButton}>
+          <TouchableOpacity 
+            style={styles.addButton}
+            onPress={() => setIsCreateModalVisible(true)}
+          >
             <Plus size={20} color={colors.gold[500]} />
           </TouchableOpacity>
         </View>
@@ -247,6 +254,19 @@ export default function AlertsScreen({ navigation }: MainTabScreenProps<'Alerts'
           </Text>
         </View>
       </ScrollView>
+
+      {/* Create Alert Modal */}
+      <CreateAlertModal
+        visible={isCreateModalVisible}
+        onClose={() => setIsCreateModalVisible(false)}
+        onSuccess={() => {
+          // TODO: Refresh alerts list
+          console.log('Alert created successfully');
+        }}
+      />
+
+      {/* Custom Alert Component */}
+      {AlertComponent}
     </View>
   );
 }
