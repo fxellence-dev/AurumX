@@ -65,6 +65,8 @@ export default function ComparatorScreen({ navigation }: MainTabScreenProps<'Com
   // FX Rate
   const [fxRate, setFxRate] = useState('');
   const [fxReversed, setFxReversed] = useState(false);
+  const [loadingFxRate, setLoadingFxRate] = useState(false);
+  const [fxRateTimestamp, setFxRateTimestamp] = useState<string | null>(null);
 
   // Comparison Settings
   const [comparisonUnit, setComparisonUnit] = useState<ComparisonUnit>('g');
@@ -137,6 +139,11 @@ export default function ComparatorScreen({ navigation }: MainTabScreenProps<'Com
       setUnitA('troyoz'); // Auto-select Troy Oz
       setLiveRateTimestampA(liveRate.timestamp);
     }
+
+    // Auto-fill FX rate if both currencies are selected
+    if (currencyB) {
+      await fetchAndSetFxRate(currency, currencyB);
+    }
   };
 
   /**
@@ -159,6 +166,129 @@ export default function ComparatorScreen({ navigation }: MainTabScreenProps<'Com
       setPriceB(liveRate.price.toFixed(2));
       setUnitB('troyoz'); // Auto-select Troy Oz
       setLiveRateTimestampB(liveRate.timestamp);
+    }
+
+    // Auto-fill FX rate if both currencies are selected
+    if (currencyA) {
+      await fetchAndSetFxRate(currencyA, currency);
+    }
+  };
+
+  /**
+   * Fetch FX rate from Supabase cache
+   * All rates are stored against GBP base currency
+   * Handles conversions: direct (GBP->X), reverse (X->GBP), and cross-rates (X->Y via GBP)
+   */
+  const fetchFxRate = async (fromCurrency: Currency, toCurrency: Currency): Promise<{ rate: number; timestamp: string } | null> => {
+    try {
+      // If same currency, rate is 1
+      if (fromCurrency === toCurrency) {
+        return { rate: 1, timestamp: new Date().toISOString() };
+      }
+
+      // Case 1: GBP -> X (direct lookup)
+      if (fromCurrency === 'GBP') {
+        const { data, error } = await supabase
+          .from('fx_rates_cache')
+          .select('exchange_rate, fetched_at')
+          .eq('base_currency', 'GBP')
+          .eq('target_currency', toCurrency)
+          .order('fetched_at', { ascending: false })
+          .limit(1)
+          .single<{ exchange_rate: number; fetched_at: string }>();
+
+        if (error) {
+          console.error('Error fetching FX rate:', error);
+          return null;
+        }
+
+        if (data) {
+          return {
+            rate: data.exchange_rate,
+            timestamp: data.fetched_at,
+          };
+        }
+      }
+
+      // Case 2: X -> GBP (reverse the rate)
+      if (toCurrency === 'GBP') {
+        const { data, error } = await supabase
+          .from('fx_rates_cache')
+          .select('exchange_rate, fetched_at')
+          .eq('base_currency', 'GBP')
+          .eq('target_currency', fromCurrency)
+          .order('fetched_at', { ascending: false })
+          .limit(1)
+          .single<{ exchange_rate: number; fetched_at: string }>();
+
+        if (error) {
+          console.error('Error fetching FX rate:', error);
+          return null;
+        }
+
+        if (data) {
+          return {
+            rate: 1 / data.exchange_rate, // Reverse the rate
+            timestamp: data.fetched_at,
+          };
+        }
+      }
+
+      // Case 3: X -> Y (cross rate via GBP)
+      // Formula: X -> Y = (GBP -> Y) / (GBP -> X)
+      // Example: INR -> EUR = (GBP -> EUR) / (GBP -> INR)
+      const { data: fromData, error: fromError } = await supabase
+        .from('fx_rates_cache')
+        .select('exchange_rate, fetched_at')
+        .eq('base_currency', 'GBP')
+        .eq('target_currency', fromCurrency)
+        .order('fetched_at', { ascending: false })
+        .limit(1)
+        .single<{ exchange_rate: number; fetched_at: string }>();
+
+      const { data: toData, error: toError } = await supabase
+        .from('fx_rates_cache')
+        .select('exchange_rate, fetched_at')
+        .eq('base_currency', 'GBP')
+        .eq('target_currency', toCurrency)
+        .order('fetched_at', { ascending: false })
+        .limit(1)
+        .single<{ exchange_rate: number; fetched_at: string }>();
+
+      if (fromError || toError) {
+        console.error('Error fetching cross FX rate:', fromError || toError);
+        return null;
+      }
+
+      if (fromData && toData) {
+        // Cross rate: (GBP -> toCurrency) / (GBP -> fromCurrency)
+        const crossRate = toData.exchange_rate / fromData.exchange_rate;
+        
+        return {
+          rate: crossRate,
+          timestamp: toData.fetched_at, // Use the more recent timestamp
+        };
+      }
+
+      return null;
+    } catch (error) {
+      console.error('Error fetching FX rate:', error);
+      return null;
+    }
+  };
+
+  /**
+   * Fetch and set FX rate in the UI
+   */
+  const fetchAndSetFxRate = async (fromCurrency: Currency, toCurrency: Currency) => {
+    setLoadingFxRate(true);
+    const fxData = await fetchFxRate(fromCurrency, toCurrency);
+    setLoadingFxRate(false);
+
+    if (fxData) {
+      setFxRate(fxData.rate.toFixed(6));
+      setFxRateTimestamp(fxData.timestamp);
+      setFxReversed(false);
     }
   };
 
@@ -280,6 +410,7 @@ export default function ComparatorScreen({ navigation }: MainTabScreenProps<'Com
     if (current > 0) {
       setFxRate((1 / current).toFixed(6));
       setFxReversed(!fxReversed);
+      setFxRateTimestamp(null); // Clear timestamp since rate is manually inverted
       // Don't swap currencies - just invert the rate
       // The FX rate display will automatically update to show the inverted relationship
     }
@@ -553,7 +684,22 @@ export default function ComparatorScreen({ navigation }: MainTabScreenProps<'Com
 
         {/* FX Rate Card */}
         <View style={styles.fxCard}>
-          <Text style={styles.sectionLabel}>Exchange Rate</Text>
+          <View style={styles.labelWithRefresh}>
+            <Text style={styles.sectionLabel}>Exchange Rate</Text>
+            {currencyA && currencyB && (
+              <TouchableOpacity
+                onPress={() => fetchAndSetFxRate(currencyA, currencyB)}
+                style={styles.refreshButton}
+                disabled={loadingFxRate}
+              >
+                {loadingFxRate ? (
+                  <ActivityIndicator size="small" color={colors.gold[500]} />
+                ) : (
+                  <RefreshCw size={16} color={colors.gold[500]} />
+                )}
+              </TouchableOpacity>
+            )}
+          </View>
           <View style={styles.fxRow}>
             <Text style={styles.fxCurrency}>
               {fxReversed ? (currencyB || '—') : (currencyA || '—')}
@@ -561,10 +707,14 @@ export default function ComparatorScreen({ navigation }: MainTabScreenProps<'Com
             <TextInput
               style={styles.fxInput}
               value={fxRate}
-              onChangeText={setFxRate}
+              onChangeText={(text) => {
+                setFxRate(text);
+                setFxRateTimestamp(null); // Clear timestamp when manually editing
+              }}
               keyboardType="decimal-pad"
-              placeholder="1.00"
+              placeholder="Select currencies"
               placeholderTextColor={colors.text.tertiary}
+              editable={!!currencyA && !!currencyB}
             />
             <Text style={styles.fxCurrency}>
               {fxReversed ? (currencyA || '—') : (currencyB || '—')}
@@ -573,9 +723,16 @@ export default function ComparatorScreen({ navigation }: MainTabScreenProps<'Com
               <ArrowLeftRight size={20} color={colors.gold[500]} />
             </TouchableOpacity>
           </View>
-          <Text style={styles.fxHint}>
-            1 {fxReversed ? (currencyB || '—') : (currencyA || '—')} = {fxRate || '—'} {fxReversed ? (currencyA || '—') : (currencyB || '—')}
-          </Text>
+          {fxRateTimestamp && (
+            <Text style={styles.liveRateHint}>
+              Rate updated {formatTimestamp(fxRateTimestamp)}
+            </Text>
+          )}
+          {!fxRateTimestamp && fxRate && (
+            <Text style={styles.fxHint}>
+              1 {fxReversed ? (currencyB || '—') : (currencyA || '—')} = {fxRate || '—'} {fxReversed ? (currencyA || '—') : (currencyB || '—')}
+            </Text>
+          )}
         </View>
 
         {/* Comparison Settings */}
@@ -1029,6 +1186,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 8,
+  },
+  refreshButton: {
+    padding: 4,
   },
   liveRateHint: {
     fontSize: 11,

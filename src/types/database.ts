@@ -18,6 +18,19 @@ export interface GoldPriceCache {
 }
 
 /**
+ * FX Rates Cache Table
+ * Stores daily FX rate snapshots against GBP base currency
+ */
+export interface FxRateCache {
+  id: string;
+  base_currency: 'GBP';
+  target_currency: 'EUR' | 'USD' | 'INR';
+  exchange_rate: number;
+  fetched_at: string;
+  created_at: string;
+}
+
+/**
  * Gold Rate Alerts Table
  * Stores user-created price alerts
  */
