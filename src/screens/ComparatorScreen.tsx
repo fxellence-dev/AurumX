@@ -12,10 +12,11 @@ import {
   TextInput,
   TouchableOpacity,
   Modal,
+  ActivityIndicator,
 } from 'react-native';
 import type { MainTabScreenProps } from '@/navigation/types';
 import { colors } from '@/theme';
-import { ArrowLeftRight, TrendingDown, TrendingUp, Trophy, ChevronDown } from 'lucide-react-native';
+import { ArrowLeftRight, TrendingDown, TrendingUp, Trophy, ChevronDown, RefreshCw, Info } from 'lucide-react-native';
 import {
   compareMarkets,
   getCurrencySymbol,
@@ -24,6 +25,7 @@ import {
   type ComparisonUnit,
   type RoundingMode,
 } from '@/services/goldPriceService';
+import { supabase } from '@/lib/supabase';
 
 const CURRENCIES: Currency[] = ['USD', 'INR', 'GBP', 'EUR'];
 const PRICE_UNITS: { value: PriceUnit; label: string }[] = [
@@ -49,12 +51,16 @@ export default function ComparatorScreen({ navigation }: MainTabScreenProps<'Com
   const [currencyA, setCurrencyA] = useState<Currency | null>(null);
   const [unitA, setUnitA] = useState<PriceUnit | null>(null);
   const [feeA, setFeeA] = useState('0');
+  const [loadingLiveRateA, setLoadingLiveRateA] = useState(false);
+  const [liveRateTimestampA, setLiveRateTimestampA] = useState<string | null>(null);
 
   // Market B
   const [priceB, setPriceB] = useState('');
   const [currencyB, setCurrencyB] = useState<Currency | null>(null);
   const [unitB, setUnitB] = useState<PriceUnit | null>(null);
   const [feeB, setFeeB] = useState('0');
+  const [loadingLiveRateB, setLoadingLiveRateB] = useState(false);
+  const [liveRateTimestampB, setLiveRateTimestampB] = useState<string | null>(null);
 
   // FX Rate
   const [fxRate, setFxRate] = useState('');
@@ -77,6 +83,197 @@ export default function ComparatorScreen({ navigation }: MainTabScreenProps<'Com
   // Refs
   const scrollViewRef = useRef<ScrollView>(null);
   const resultsRef = useRef<View>(null);
+
+  /**
+   * Fetch live gold rate from Supabase cache for a given currency
+   */
+  const fetchLiveRate = async (currency: Currency): Promise<{ price: number; timestamp: string } | null> => {
+    try {
+      const { data, error } = await supabase
+        .from('gold_prices_cache')
+        .select('price_per_oz, created_at')
+        .eq('currency', currency)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single<{ price_per_oz: number; created_at: string }>();
+
+      if (error) {
+        console.error('Error fetching live rate:', error);
+        return null;
+      }
+
+      if (data) {
+        return {
+          price: data.price_per_oz,
+          timestamp: data.created_at,
+        };
+      }
+
+      return null;
+    } catch (error) {
+      console.error('Error fetching live rate:', error);
+      return null;
+    }
+  };
+
+  /**
+   * Handle currency selection for Market A with auto-fill
+   */
+  const handleCurrencyAChange = async (currency: Currency) => {
+    if (currency === currencyB) {
+      return; // Can't select same currency
+    }
+
+    setCurrencyA(currency);
+    setShowCurrencyADropdown(false);
+
+    // Auto-fill with live rate
+    setLoadingLiveRateA(true);
+    const liveRate = await fetchLiveRate(currency);
+    setLoadingLiveRateA(false);
+
+    if (liveRate) {
+      setPriceA(liveRate.price.toFixed(2));
+      setUnitA('troyoz'); // Auto-select Troy Oz
+      setLiveRateTimestampA(liveRate.timestamp);
+    }
+  };
+
+  /**
+   * Handle currency selection for Market B with auto-fill
+   */
+  const handleCurrencyBChange = async (currency: Currency) => {
+    if (currency === currencyA) {
+      return; // Can't select same currency
+    }
+
+    setCurrencyB(currency);
+    setShowCurrencyBDropdown(false);
+
+    // Auto-fill with live rate
+    setLoadingLiveRateB(true);
+    const liveRate = await fetchLiveRate(currency);
+    setLoadingLiveRateB(false);
+
+    if (liveRate) {
+      setPriceB(liveRate.price.toFixed(2));
+      setUnitB('troyoz'); // Auto-select Troy Oz
+      setLiveRateTimestampB(liveRate.timestamp);
+    }
+  };
+
+  /**
+   * Manually refresh live rate for Market A
+   */
+  const refreshLiveRateA = async () => {
+    if (!currencyA) return;
+
+    setLoadingLiveRateA(true);
+    const liveRate = await fetchLiveRate(currencyA);
+    setLoadingLiveRateA(false);
+
+    if (liveRate) {
+      setPriceA(liveRate.price.toFixed(2));
+      setLiveRateTimestampA(liveRate.timestamp);
+    }
+  };
+
+  /**
+   * Convert price from Troy Oz to selected unit
+   */
+  const convertPriceFromTroyOz = (pricePerTroyOz: number, targetUnit: PriceUnit): number => {
+    // Price per gram = price per troy oz / 31.1035
+    const pricePerGram = pricePerTroyOz / 31.1035;
+    
+    switch (targetUnit) {
+      case 'g':
+        return pricePerGram;
+      case '10g':
+        return pricePerGram * 10;
+      case 'oz':
+        return pricePerGram * 28.3495; // Regular ounce
+      case 'troyoz':
+        return pricePerTroyOz;
+      default:
+        return pricePerTroyOz;
+    }
+  };
+
+  /**
+   * Handle unit change for Market A
+   */
+  const handleUnitAChange = (newUnit: PriceUnit) => {
+    // If we have a live rate timestamp and current price
+    if (liveRateTimestampA && priceA && unitA) {
+      // Convert the current price back to Troy Oz, then to new unit
+      const currentPriceNum = parseFloat(priceA);
+      
+      // First convert current price to Troy Oz (reverse of convertPriceFromTroyOz)
+      let pricePerTroyOz: number;
+      const pricePerGram = currentPriceNum / (unitA === 'g' ? 1 : unitA === '10g' ? 10 : unitA === 'oz' ? 28.3495 : 31.1035);
+      pricePerTroyOz = pricePerGram * 31.1035;
+      
+      // Now convert to new unit
+      const newPrice = convertPriceFromTroyOz(pricePerTroyOz, newUnit);
+      setPriceA(newPrice.toFixed(2));
+    }
+    
+    setUnitA(newUnit);
+    setShowUnitADropdown(false);
+  };
+
+  /**
+   * Handle unit change for Market B
+   */
+  const handleUnitBChange = (newUnit: PriceUnit) => {
+    // If we have a live rate timestamp and current price
+    if (liveRateTimestampB && priceB && unitB) {
+      // Convert the current price back to Troy Oz, then to new unit
+      const currentPriceNum = parseFloat(priceB);
+      
+      // First convert current price to Troy Oz (reverse of convertPriceFromTroyOz)
+      let pricePerTroyOz: number;
+      const pricePerGram = currentPriceNum / (unitB === 'g' ? 1 : unitB === '10g' ? 10 : unitB === 'oz' ? 28.3495 : 31.1035);
+      pricePerTroyOz = pricePerGram * 31.1035;
+      
+      // Now convert to new unit
+      const newPrice = convertPriceFromTroyOz(pricePerTroyOz, newUnit);
+      setPriceB(newPrice.toFixed(2));
+    }
+    
+    setUnitB(newUnit);
+    setShowUnitBDropdown(false);
+  };
+
+  /**
+   * Manually refresh live rate for Market B
+   */
+  const refreshLiveRateB = async () => {
+    if (!currencyB) return;
+
+    setLoadingLiveRateB(true);
+    const liveRate = await fetchLiveRate(currencyB);
+    setLoadingLiveRateB(false);
+
+    if (liveRate) {
+      setPriceB(liveRate.price.toFixed(2));
+      setLiveRateTimestampB(liveRate.timestamp);
+    }
+  };
+
+  /**
+   * Format timestamp for display
+   */
+  const formatTimestamp = (timestamp: string): string => {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
+
+    if (diffMinutes < 1) return 'Just now';
+    if (diffMinutes < 60) return `${diffMinutes}m ago`;
+    if (diffMinutes < 1440) return `${Math.floor(diffMinutes / 60)}h ago`;
+    return date.toLocaleDateString();
+  };
 
   const swapFxRate = () => {
     const current = parseFloat(fxRate);
@@ -160,6 +357,14 @@ export default function ComparatorScreen({ navigation }: MainTabScreenProps<'Com
           </Text>
         </View>
 
+        {/* Info Banner */}
+        <View style={styles.infoBanner}>
+          <Info size={16} color={colors.accent.blue} />
+          <Text style={styles.infoBannerText}>
+            Live market rates are auto-populated with Troy Oz unit. You can modify them if needed.
+          </Text>
+        </View>
+
         {/* Market A Card */}
         <View style={styles.marketCard}>
           <View style={styles.marketHeader}>
@@ -168,64 +373,88 @@ export default function ComparatorScreen({ navigation }: MainTabScreenProps<'Com
             </View>
           </View>
 
+          {/* Currency First */}
           <View style={styles.inputRow}>
-            <Text style={styles.inputLabel}>Price</Text>
+            <Text style={styles.inputLabel}>Currency</Text>
+            <TouchableOpacity
+              style={styles.dropdown}
+              onPress={() => setShowCurrencyADropdown(true)}
+              activeOpacity={0.7}
+            >
+              <Text style={[
+                styles.dropdownText,
+                !currencyA && styles.dropdownPlaceholder
+              ]}>
+                {currencyA ? `${getCurrencySymbol(currencyA)} ${currencyA}` : 'Select Currency'}
+              </Text>
+              <ChevronDown size={20} color={colors.gold[500]} />
+            </TouchableOpacity>
+          </View>
+
+          {/* Price with Live Rate Indicator */}
+          <View style={styles.inputRow}>
+            <View style={styles.labelWithRefresh}>
+              <Text style={styles.inputLabel}>Price per Troy Oz</Text>
+              {currencyA && (
+                <TouchableOpacity onPress={refreshLiveRateA} disabled={loadingLiveRateA}>
+                  {loadingLiveRateA ? (
+                    <ActivityIndicator size="small" color={colors.gold[500]} />
+                  ) : (
+                    <RefreshCw size={16} color={colors.gold[500]} />
+                  )}
+                </TouchableOpacity>
+              )}
+            </View>
             <TextInput
               style={styles.input}
               value={priceA}
-              onChangeText={setPriceA}
+              onChangeText={(text) => {
+                setPriceA(text);
+                setLiveRateTimestampA(null); // Clear timestamp when manually editing
+              }}
               keyboardType="decimal-pad"
-              placeholder="0.00"
+              placeholder="Select currency first"
               placeholderTextColor={colors.text.tertiary}
+              editable={!!currencyA}
             />
+            {liveRateTimestampA && (
+              <Text style={styles.liveRateHint}>
+                Rate updated {formatTimestamp(liveRateTimestampA)}
+              </Text>
+            )}
           </View>
 
+          {/* Unit and Fee */}
           <View style={styles.row}>
-            <View style={styles.halfInput}>
-              <Text style={styles.inputLabel}>Currency</Text>
-              <TouchableOpacity
-                style={styles.dropdown}
-                onPress={() => setShowCurrencyADropdown(true)}
-                activeOpacity={0.7}
-              >
-                <Text style={[
-                  styles.dropdownText,
-                  !currencyA && styles.dropdownPlaceholder
-                ]}>
-                  {currencyA ? `${getCurrencySymbol(currencyA)} ${currencyA}` : 'Select Currency'}
-                </Text>
-                <ChevronDown size={20} color={colors.gold[500]} />
-              </TouchableOpacity>
-            </View>
-
             <View style={styles.halfInput}>
               <Text style={styles.inputLabel}>Unit</Text>
               <TouchableOpacity
                 style={styles.dropdown}
                 onPress={() => setShowUnitADropdown(true)}
                 activeOpacity={0.7}
+                disabled={!currencyA}
               >
                 <Text style={[
                   styles.dropdownText,
                   !unitA && styles.dropdownPlaceholder
                 ]}>
-                  {unitA ? PRICE_UNITS.find(u => u.value === unitA)?.label : 'Select Unit'}
+                  {unitA ? PRICE_UNITS.find(u => u.value === unitA)?.label : 'Auto-set'}
                 </Text>
                 <ChevronDown size={20} color={colors.gold[500]} />
               </TouchableOpacity>
             </View>
-          </View>
 
-          <View style={styles.inputRow}>
-            <Text style={styles.inputLabel}>Fee/Markup %</Text>
-            <TextInput
-              style={styles.input}
-              value={feeA}
-              onChangeText={setFeeA}
-              keyboardType="decimal-pad"
-              placeholder="0.00"
-              placeholderTextColor={colors.text.tertiary}
-            />
+            <View style={styles.halfInput}>
+              <Text style={styles.inputLabel}>Fee/Markup %</Text>
+              <TextInput
+                style={styles.input}
+                value={feeA}
+                onChangeText={setFeeA}
+                keyboardType="decimal-pad"
+                placeholder="0.00"
+                placeholderTextColor={colors.text.tertiary}
+              />
+            </View>
           </View>
         </View>
 
@@ -237,64 +466,88 @@ export default function ComparatorScreen({ navigation }: MainTabScreenProps<'Com
             </View>
           </View>
 
+          {/* Currency First */}
           <View style={styles.inputRow}>
-            <Text style={styles.inputLabel}>Price</Text>
+            <Text style={styles.inputLabel}>Currency</Text>
+            <TouchableOpacity
+              style={styles.dropdown}
+              onPress={() => setShowCurrencyBDropdown(true)}
+              activeOpacity={0.7}
+            >
+              <Text style={[
+                styles.dropdownText,
+                !currencyB && styles.dropdownPlaceholder
+              ]}>
+                {currencyB ? `${getCurrencySymbol(currencyB)} ${currencyB}` : 'Select Currency'}
+              </Text>
+              <ChevronDown size={20} color={colors.gold[500]} />
+            </TouchableOpacity>
+          </View>
+
+          {/* Price with Live Rate Indicator */}
+          <View style={styles.inputRow}>
+            <View style={styles.labelWithRefresh}>
+              <Text style={styles.inputLabel}>Price per Troy Oz</Text>
+              {currencyB && (
+                <TouchableOpacity onPress={refreshLiveRateB} disabled={loadingLiveRateB}>
+                  {loadingLiveRateB ? (
+                    <ActivityIndicator size="small" color={colors.gold[500]} />
+                  ) : (
+                    <RefreshCw size={16} color={colors.gold[500]} />
+                  )}
+                </TouchableOpacity>
+              )}
+            </View>
             <TextInput
               style={styles.input}
               value={priceB}
-              onChangeText={setPriceB}
+              onChangeText={(text) => {
+                setPriceB(text);
+                setLiveRateTimestampB(null); // Clear timestamp when manually editing
+              }}
               keyboardType="decimal-pad"
-              placeholder="0.00"
+              placeholder="Select currency first"
               placeholderTextColor={colors.text.tertiary}
+              editable={!!currencyB}
             />
+            {liveRateTimestampB && (
+              <Text style={styles.liveRateHint}>
+                Rate updated {formatTimestamp(liveRateTimestampB)}
+              </Text>
+            )}
           </View>
 
+          {/* Unit and Fee */}
           <View style={styles.row}>
-            <View style={styles.halfInput}>
-              <Text style={styles.inputLabel}>Currency</Text>
-              <TouchableOpacity
-                style={styles.dropdown}
-                onPress={() => setShowCurrencyBDropdown(true)}
-                activeOpacity={0.7}
-              >
-                <Text style={[
-                  styles.dropdownText,
-                  !currencyB && styles.dropdownPlaceholder
-                ]}>
-                  {currencyB ? `${getCurrencySymbol(currencyB)} ${currencyB}` : 'Select Currency'}
-                </Text>
-                <ChevronDown size={20} color={colors.gold[500]} />
-              </TouchableOpacity>
-            </View>
-
             <View style={styles.halfInput}>
               <Text style={styles.inputLabel}>Unit</Text>
               <TouchableOpacity
                 style={styles.dropdown}
                 onPress={() => setShowUnitBDropdown(true)}
                 activeOpacity={0.7}
+                disabled={!currencyB}
               >
                 <Text style={[
                   styles.dropdownText,
                   !unitB && styles.dropdownPlaceholder
                 ]}>
-                  {unitB ? PRICE_UNITS.find(u => u.value === unitB)?.label : 'Select Unit'}
+                  {unitB ? PRICE_UNITS.find(u => u.value === unitB)?.label : 'Auto-set'}
                 </Text>
                 <ChevronDown size={20} color={colors.gold[500]} />
               </TouchableOpacity>
             </View>
-          </View>
 
-          <View style={styles.inputRow}>
-            <Text style={styles.inputLabel}>Fee/Markup %</Text>
-            <TextInput
-              style={styles.input}
-              value={feeB}
-              onChangeText={setFeeB}
-              keyboardType="decimal-pad"
-              placeholder="0.00"
-              placeholderTextColor={colors.text.tertiary}
-            />
+            <View style={styles.halfInput}>
+              <Text style={styles.inputLabel}>Fee/Markup %</Text>
+              <TextInput
+                style={styles.input}
+                value={feeB}
+                onChangeText={setFeeB}
+                keyboardType="decimal-pad"
+                placeholder="0.00"
+                placeholderTextColor={colors.text.tertiary}
+              />
+            </View>
           </View>
         </View>
 
@@ -540,12 +793,7 @@ export default function ComparatorScreen({ navigation }: MainTabScreenProps<'Com
                   currencyA === curr && styles.modalOptionActive,
                   curr === currencyB && styles.modalOptionDisabled,
                 ]}
-                onPress={() => {
-                  if (curr !== currencyB) {
-                    setCurrencyA(curr);
-                    setShowCurrencyADropdown(false);
-                  }
-                }}
+                onPress={() => handleCurrencyAChange(curr)}
                 disabled={curr === currencyB}
               >
                 <View style={styles.modalOptionLeft}>
@@ -593,12 +841,7 @@ export default function ComparatorScreen({ navigation }: MainTabScreenProps<'Com
                   currencyB === curr && styles.modalOptionActive,
                   curr === currencyA && styles.modalOptionDisabled,
                 ]}
-                onPress={() => {
-                  if (curr !== currencyA) {
-                    setCurrencyB(curr);
-                    setShowCurrencyBDropdown(false);
-                  }
-                }}
+                onPress={() => handleCurrencyBChange(curr)}
                 disabled={curr === currencyA}
               >
                 <View style={styles.modalOptionLeft}>
@@ -645,10 +888,7 @@ export default function ComparatorScreen({ navigation }: MainTabScreenProps<'Com
                   styles.modalOption,
                   unitA === unit.value && styles.modalOptionActive,
                 ]}
-                onPress={() => {
-                  setUnitA(unit.value);
-                  setShowUnitADropdown(false);
-                }}
+                onPress={() => handleUnitAChange(unit.value)}
               >
                 <View style={styles.modalOptionLeft}>
                   <Text style={styles.modalOptionText}>
@@ -690,10 +930,7 @@ export default function ComparatorScreen({ navigation }: MainTabScreenProps<'Com
                   styles.modalOption,
                   unitB === unit.value && styles.modalOptionActive,
                 ]}
-                onPress={() => {
-                  setUnitB(unit.value);
-                  setShowUnitBDropdown(false);
-                }}
+                onPress={() => handleUnitBChange(unit.value)}
               >
                 <View style={styles.modalOptionLeft}>
                   <Text style={styles.modalOptionText}>
@@ -735,6 +972,21 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.text.secondary,
   },
+  infoBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.accent.blue + '15',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 16,
+    gap: 10,
+  },
+  infoBannerText: {
+    flex: 1,
+    fontSize: 13,
+    color: colors.accent.blue,
+    lineHeight: 18,
+  },
   marketCard: {
     backgroundColor: colors.background.secondary,
     borderRadius: 16,
@@ -771,6 +1023,18 @@ const styles = StyleSheet.create({
     color: colors.text.tertiary,
     marginBottom: 8,
     textTransform: 'uppercase',
+  },
+  labelWithRefresh: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  liveRateHint: {
+    fontSize: 11,
+    color: colors.accent.green,
+    marginTop: 6,
+    fontWeight: '500',
   },
   input: {
     backgroundColor: colors.background.primary,
