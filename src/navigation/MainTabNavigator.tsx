@@ -8,13 +8,13 @@ import { Platform } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import type { MainTabParamList } from './types';
 import { colors } from '@/theme';
-import { Scale, TrendingUp, Bell, User } from 'lucide-react-native';
+import { Scale, TrendingUp, Bell, Sparkles } from 'lucide-react-native';
 
 // Screens
 import ComparatorScreen from '@/screens/ComparatorScreen';
 import LiveRatesScreen from '@/screens/LiveRatesScreen';
 import AlertsScreen from '@/screens/AlertsScreen';
-import ProfileScreen from '@/screens/ProfileScreen';
+import ExtraScreen from '@/screens/ExtraScreen';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
@@ -53,22 +53,6 @@ export default function MainTabNavigator() {
       }}
     >
       <Tab.Screen
-        name="Comparator"
-        component={ComparatorScreen}
-        options={{
-          title: '',
-          tabBarLabel: 'Compare',
-          tabBarIcon: ({ focused, color }) => (
-            <Scale 
-              size={24} 
-              color={color}
-              strokeWidth={focused ? 2.5 : 2}
-            />
-          ),
-        }}
-      />
-      
-      <Tab.Screen
         name="LiveRates"
         component={LiveRatesScreen}
         options={{
@@ -101,13 +85,29 @@ export default function MainTabNavigator() {
       />
       
       <Tab.Screen
-        name="Profile"
-        component={ProfileScreen}
+        name="Comparator"
+        component={ComparatorScreen}
         options={{
           title: '',
-          tabBarLabel: 'Profile',
+          tabBarLabel: 'Compare',
           tabBarIcon: ({ focused, color }) => (
-            <User 
+            <Scale 
+              size={24} 
+              color={color}
+              strokeWidth={focused ? 2.5 : 2}
+            />
+          ),
+        }}
+      />
+      
+      <Tab.Screen
+        name="Extra"
+        component={ExtraScreen}
+        options={{
+          title: '',
+          tabBarLabel: 'Extra',
+          tabBarIcon: ({ focused, color }) => (
+            <Sparkles 
               size={24} 
               color={color}
               strokeWidth={focused ? 2.5 : 2}

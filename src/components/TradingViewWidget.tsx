@@ -85,14 +85,14 @@ export const TradingViewWidget: React.FC<TradingViewWidgetProps> = ({
       "changeMode": "price-and-percent",
       "symbols": [
         [
-          "${symbol}|1D"
+          "${symbol}|12M"
         ]
       ],
       "dateRanges": [
+        "12m|1D",
         "1d|1",
         "1m|30",
         "3m|60",
-        "12m|1D",
         "60m|1W",
         "all|1M"
       ],

@@ -154,9 +154,32 @@ export default function AlertsScreen({ navigation }: MainTabScreenProps<'Alerts'
   };
 
   // Refresh alerts after creating a new one
-  const handleAlertCreated = () => {
-    console.log('Alert created, refreshing list...');
-    fetchAlerts(0);
+  const handleAlertCreated = (newAlert?: GoldRateAlert) => {
+    console.log('🎯 handleAlertCreated called with:', JSON.stringify(newAlert, null, 2));
+    setIsCreateModalVisible(false); // Ensure modal is closed
+    
+    if (newAlert) {
+      // Add the new alert to the top of the list immediately (optimistic update)
+      console.log('✅ Adding new alert to list (optimistic update)');
+      setAlerts((prevAlerts) => {
+        console.log('📝 Previous alerts:', prevAlerts);
+        console.log('📝 Previous alerts count:', prevAlerts.length);
+        const updated = [newAlert, ...prevAlerts];
+        console.log('📝 Updated alerts:', updated);
+        console.log('📝 New alerts count:', updated.length);
+        return updated;
+      });
+      
+      // Force a re-render by also updating loading state
+      setIsLoadingAlerts(false);
+    } else {
+      // Fallback: If no alert data provided, fetch from server
+      console.log('⚠️ No alert data provided, fetching from server...');
+      setTimeout(() => {
+        console.log('🔄 Fetching updated alerts list...');
+        fetchAlerts(0);
+      }, 500);
+    }
   };
 
   // Handle alert deletion
@@ -332,6 +355,11 @@ export default function AlertsScreen({ navigation }: MainTabScreenProps<'Alerts'
           <View style={styles.sectionTitleContainer}>
             <Bell size={20} color={colors.gold[500]} />
             <Text style={styles.sectionTitle}>My Alerts</Text>
+            {alerts.length > 0 && (
+              <View style={styles.alertCountBadge}>
+                <Text style={styles.alertCountText}>{alerts.length}</Text>
+              </View>
+            )}
           </View>
           <TouchableOpacity 
             style={styles.addButton}
@@ -398,6 +426,9 @@ export default function AlertsScreen({ navigation }: MainTabScreenProps<'Alerts'
         visible={isCreateModalVisible}
         onClose={() => setIsCreateModalVisible(false)}
         onSuccess={handleAlertCreated}
+        showSuccessAlert={(message) => {
+          showAlert('success', 'Success! 🎉', message);
+        }}
       />
 
       {/* Custom Alert Component */}
@@ -585,6 +616,20 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     color: colors.text.primary,
+  },
+  alertCountBadge: {
+    backgroundColor: colors.gold[500],
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+    minWidth: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  alertCountText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.background.primary,
   },
   liveBadge: {
     flexDirection: 'row',

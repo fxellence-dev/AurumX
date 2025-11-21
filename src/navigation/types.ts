@@ -17,10 +17,10 @@ export type RootStackParamList = {
 
 // Main Bottom Tab Navigator
 export type MainTabParamList = {
-  Comparator: undefined;
   LiveRates: undefined;
   Alerts: undefined;
-  Profile: undefined;
+  Comparator: undefined;
+  Extra: undefined;
 };
 
 // Screen Props Types

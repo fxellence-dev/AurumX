@@ -482,9 +482,9 @@ export default function ComparatorScreen({ navigation }: MainTabScreenProps<'Com
       >
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.title}>Market Comparator</Text>
+          <Text style={styles.title}>Compare Markets</Text>
           <Text style={styles.subtitle}>
-            Compare gold prices between two markets
+            Find the best gold prices across different markets
           </Text>
         </View>
 
@@ -1117,17 +1117,19 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   header: {
-    marginBottom: 20,
+    marginBottom: 24,
   },
   title: {
-    fontSize: 24,
-    fontWeight: '700',
+    fontSize: 32,
+    fontWeight: '800',
     color: colors.text.primary,
-    marginBottom: 6,
+    marginBottom: 8,
+    letterSpacing: -0.5,
   },
   subtitle: {
-    fontSize: 14,
+    fontSize: 16,
     color: colors.text.secondary,
+    lineHeight: 22,
   },
   infoBanner: {
     flexDirection: 'row',

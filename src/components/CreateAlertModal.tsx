@@ -69,10 +69,11 @@ const CURRENCIES = [
 interface CreateAlertModalProps {
   visible: boolean;
   onClose: () => void;
-  onSuccess?: () => void;
+  onSuccess?: (newAlert?: any) => void;
+  showSuccessAlert?: (message: string) => void;
 }
 
-export function CreateAlertModal({ visible, onClose, onSuccess }: CreateAlertModalProps) {
+export function CreateAlertModal({ visible, onClose, onSuccess, showSuccessAlert }: CreateAlertModalProps) {
   const { user } = useAuth();
   const { showAlert, AlertComponent } = useCustomAlert();
   const [selectedCondition, setSelectedCondition] = useState<string | null>(null);
@@ -168,21 +169,19 @@ export function CreateAlertModal({ visible, onClose, onSuccess }: CreateAlertMod
 
       console.log('Alert created successfully:', data);
 
-      // Show success message
-      showAlert(
-        'success',
-        'Success! 🎉',
-        `Your alert "${alertName}" has been created successfully. You'll be notified via email and push notification when the condition is met.`,
-        [
-          {
-            text: 'OK',
-            onPress: () => {
-              handleClose();
-              onSuccess?.();
-            },
-          },
-        ]
-      );
+      // Close modal first
+      handleClose();
+      
+      // Call onSuccess immediately to update the UI
+      onSuccess?.(data);
+      
+      // Show success message using parent's alert (after modal is closed)
+      if (showSuccessAlert) {
+        setTimeout(() => {
+          console.log('Showing success alert via parent...');
+          showSuccessAlert(`Your alert "${alertName}" has been created successfully. You'll be notified via email and push notification when the condition is met.`);
+        }, 400);
+      }
     } catch (error: any) {
       console.error('Failed to create alert:', error);
       showAlert(
