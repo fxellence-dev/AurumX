@@ -8,16 +8,22 @@
  * - React Navigation with bottom tabs
  * - Premium animated splash screen with gold gradients
  * - Premium 3D UI with modern design
+ * - Push notifications for gold price alerts
  */
 
 import { useState, useEffect, useRef } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, Animated, Dimensions } from 'react-native';
+import { StyleSheet, Text, View, Animated, Dimensions, Image } from 'react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '@/contexts/AuthContext';
 import RootNavigator from '@/navigation/RootNavigator';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors } from '@/theme';
+import * as Notifications from 'expo-notifications';
+import {
+  addNotificationReceivedListener,
+  addNotificationResponseReceivedListener,
+} from '@/services/notificationService';
 
 const { width, height } = Dimensions.get('window');
 
@@ -38,6 +44,39 @@ export default function App() {
   const shimmerAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.8)).current;
   const glowAnim = useRef(new Animated.Value(0)).current;
+  const notificationListener = useRef<any>(null);
+  const responseListener = useRef<any>(null);
+
+  // Set up notification listeners
+  useEffect(() => {
+    // Handle notification received while app is in foreground
+    notificationListener.current = addNotificationReceivedListener(notification => {
+      console.log('🔔 Notification received:', notification);
+      // Notification will be displayed automatically by the handler we set
+    });
+
+    // Handle notification tapped by user
+    responseListener.current = addNotificationResponseReceivedListener(response => {
+      console.log('👆 Notification tapped:', response);
+      
+      // You can navigate to specific screen based on notification data
+      const data = response.notification.request.content.data;
+      if (data?.alertId) {
+        console.log('📍 Navigate to alert:', data.alertId);
+        // TODO: Add navigation logic when RootNavigator is ready
+        // Example: navigationRef.current?.navigate('Alerts');
+      }
+    });
+
+    return () => {
+      if (notificationListener.current) {
+        notificationListener.current.remove();
+      }
+      if (responseListener.current) {
+        responseListener.current.remove();
+      }
+    };
+  }, []);
 
   useEffect(() => {
     // Start animations

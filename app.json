@@ -21,6 +21,7 @@
       "buildNumber": "1",
       "icon": "./assets/icon.png",
       "infoPlist": {
+        "UIBackgroundModes": ["remote-notification"],
         "CFBundleURLTypes": [
           {
             "CFBundleURLSchemes": [
@@ -71,8 +72,20 @@
           }
         }
       ],
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#D4AF37",
+          "defaultChannel": "default"
+        }
+      ]
     ],
+    "notification": {
+      "icon": "./assets/icon.png",
+      "color": "#D4AF37"
+    },
     "experiments": {
       "typedRoutes": true
     },

@@ -13,6 +13,11 @@ import { Session, User } from '@supabase/supabase-js';
 import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
 import { supabase, ExpoSecureStoreAdapter } from '@/lib/supabase';
+import {
+  registerForPushNotificationsAsync,
+  savePushTokenToDatabase,
+  removePushTokenFromDatabase,
+} from '@/services/notificationService';
 
 // Configure WebBrowser for OAuth
 WebBrowser.maybeCompleteAuthSession();
@@ -148,7 +153,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           console.log('🔑 Has refresh_token:', !!refresh_token);
 
           if (access_token && refresh_token) {
-            const { error: sessionError } = await supabase.auth.setSession({
+            const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
               access_token,
               refresh_token,
             });
@@ -159,6 +164,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             }
             
             console.log('✅ Session set successfully!');
+            
+            // Register for push notifications after successful sign in
+            if (sessionData?.session?.user) {
+              try {
+                console.log('📱 Registering for push notifications...');
+                const pushToken = await registerForPushNotificationsAsync();
+                
+                if (pushToken) {
+                  await savePushTokenToDatabase(sessionData.session.user.id, pushToken, supabase);
+                  console.log('✅ Push token registered and saved');
+                } else {
+                  console.log('⚠️ No push token received (might be simulator or permissions denied)');
+                }
+              } catch (pushError) {
+                console.error('⚠️ Failed to register push notifications:', pushError);
+                // Don't throw - push notifications are not critical for sign in
+              }
+            }
           } else {
             console.error('❌ No tokens found in callback URL');
           }
@@ -178,6 +201,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       console.log('🔓 Signing out...');
       console.log('Current session:', session?.user?.email);
+      
+      // Remove push token before signing out
+      if (session?.user?.id) {
+        try {
+          console.log('📱 Removing push token...');
+          await removePushTokenFromDatabase(session.user.id, supabase);
+          console.log('✅ Push token removed');
+        } catch (pushError) {
+          console.error('⚠️ Failed to remove push token:', pushError);
+          // Don't throw - continue with sign out
+        }
+      }
       
       // Sign out from Supabase (this clears the session from SecureStore)
       const { error } = await supabase.auth.signOut();
