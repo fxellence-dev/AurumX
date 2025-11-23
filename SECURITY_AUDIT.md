@@ -41,8 +41,8 @@ These files contain sensitive data but are **properly protected** by `.gitignore
 ### Files Modified
 
 1. **NOTIFICATION_SYSTEM.md**
-   - Removed real AWS Access Key ID: ``
-   - Removed real AWS Secret Key: ``
+   - Removed real AWS Access Key ID: `YOUR-AWS-ACCESS`
+   - Removed real AWS Secret Key: `YOUR-AWS-SECRET`
    - Replaced all project IDs with `YOUR-PROJECT-ID`
 
 2. **ENV_VARIABLES_EXPLAINED.md**
