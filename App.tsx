@@ -13,7 +13,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, Animated, Dimensions, Image } from 'react-native';
+import { StyleSheet, Text, View, Animated, Dimensions } from 'react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '@/contexts/AuthContext';
 import RootNavigator from '@/navigation/RootNavigator';
@@ -41,9 +41,10 @@ const queryClient = new QueryClient({
 export default function App() {
   const [isReady, setIsReady] = useState(false);
   const fadeAnim = useRef(new Animated.Value(1)).current;
-  const shimmerAnim = useRef(new Animated.Value(0)).current;
-  const scaleAnim = useRef(new Animated.Value(0.8)).current;
-  const glowAnim = useRef(new Animated.Value(0)).current;
+  const scaleAnim = useRef(new Animated.Value(0.95)).current;
+  const logoOpacity = useRef(new Animated.Value(0)).current;
+  const textOpacity = useRef(new Animated.Value(0)).current;
+  const glowAnim = useRef(new Animated.Value(0.5)).current;
   const notificationListener = useRef<any>(null);
   const responseListener = useRef<any>(null);
 
@@ -79,50 +80,49 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    // Start animations
-    Animated.parallel([
-      // Logo scale-in animation
-      Animated.spring(scaleAnim, {
+    // Simple, elegant fade-in sequence
+    Animated.sequence([
+      // Logo fades in and scales up gently
+      Animated.parallel([
+        Animated.timing(logoOpacity, {
+          toValue: 1,
+          duration: 600,
+          useNativeDriver: true,
+        }),
+        Animated.spring(scaleAnim, {
+          toValue: 1,
+          tension: 40,
+          friction: 7,
+          useNativeDriver: true,
+        }),
+      ]),
+      // Text fades in after logo
+      Animated.timing(textOpacity, {
         toValue: 1,
-        tension: 50,
-        friction: 7,
+        duration: 500,
+        delay: 200,
         useNativeDriver: true,
       }),
-      // Shimmer animation - continuous loop
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(shimmerAnim, {
-            toValue: 1,
-            duration: 2000,
-            useNativeDriver: true,
-          }),
-          Animated.timing(shimmerAnim, {
-            toValue: 0,
-            duration: 2000,
-            useNativeDriver: true,
-          }),
-        ])
-      ),
-      // Glow pulse animation
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(glowAnim, {
-            toValue: 1,
-            duration: 1500,
-            useNativeDriver: true,
-          }),
-          Animated.timing(glowAnim, {
-            toValue: 0,
-            duration: 1500,
-            useNativeDriver: true,
-          }),
-        ])
-      ),
     ]).start();
 
-    // Show splash for 5 seconds
+    // Subtle glow pulse (slow and gentle)
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(glowAnim, {
+          toValue: 0.7,
+          duration: 2500,
+          useNativeDriver: true,
+        }),
+        Animated.timing(glowAnim, {
+          toValue: 0.4,
+          duration: 2500,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+
+    // Show splash for 3 seconds (shorter, cleaner)
     const timer = setTimeout(() => {
-      // Fade out splash screen
       Animated.timing(fadeAnim, {
         toValue: 0,
         duration: 600,
@@ -130,102 +130,88 @@ export default function App() {
       }).start(() => {
         setIsReady(true);
       });
-    }, 5000);
+    }, 3000);
 
     return () => clearTimeout(timer);
-  }, [fadeAnim, shimmerAnim, scaleAnim, glowAnim]);
-
-  // Shimmer translate animation
-  const shimmerTranslate = shimmerAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [-width, width],
-  });
-
-  // Glow opacity animation
-  const glowOpacity = glowAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0.3, 0.8],
-  });
+  }, [fadeAnim, scaleAnim, glowAnim, logoOpacity, textOpacity]);
 
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         {!isReady ? (
           <Animated.View style={[styles.splashContainer, { opacity: fadeAnim }]}>
-            {/* Animated gradient background */}
+            {/* Clean gradient background */}
             <LinearGradient
               colors={[
                 '#000000',
+                '#0A0A0B',
                 colors.gold[900],
-                colors.gold[700],
-                colors.gold[500],
-                colors.gold[700],
-                colors.gold[900],
+                '#0A0A0B',
                 '#000000',
               ]}
-              locations={[0, 0.2, 0.35, 0.5, 0.65, 0.8, 1]}
+              locations={[0, 0.3, 0.5, 0.7, 1]}
               start={{ x: 0, y: 0 }}
               end={{ x: 0, y: 1 }}
               style={StyleSheet.absoluteFillObject}
             />
 
-            {/* Animated shimmer overlay */}
-            <Animated.View
-              style={[
-                styles.shimmerOverlay,
-                {
-                  transform: [{ translateX: shimmerTranslate }],
-                },
-              ]}
-            >
-              <LinearGradient
-                colors={['transparent', 'rgba(255, 255, 255, 0.3)', 'transparent']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={StyleSheet.absoluteFillObject}
-              />
-            </Animated.View>
-
             {/* Content */}
             <View style={styles.splashContent}>
-              {/* Animated glow behind logo */}
-              <Animated.View style={[styles.logoGlow, { opacity: glowOpacity }]}>
+              {/* Subtle glow behind logo */}
+              <Animated.View style={[styles.logoGlow, { opacity: glowAnim }]}>
                 <LinearGradient
-                  colors={[colors.gold[400], colors.gold[600], 'transparent']}
+                  colors={[colors.gold[600], colors.gold[800], 'transparent']}
                   style={styles.glowGradient}
                 />
               </Animated.View>
 
-              {/* Logo/Title with scale animation */}
-              <Animated.View style={[styles.logoContainer, { transform: [{ scale: scaleAnim }] }]}>
-                <LinearGradient
-                  colors={[colors.gold[300], colors.gold[500], colors.gold[700]]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.emojiGradient}
-                >
-                  <Text style={styles.logoEmoji}>✨</Text>
-                </LinearGradient>
-                
+              {/* Main logo container */}
+              <Animated.View
+                style={[
+                  styles.logoContainer,
+                  {
+                    opacity: logoOpacity,
+                    transform: [{ scale: scaleAnim }],
+                  },
+                ]}
+              >
+                {/* Elegant card */}
+                <View style={styles.logoCard}>
+                  <LinearGradient
+                    colors={[
+                      'rgba(217, 164, 65, 0.12)',
+                      'rgba(217, 164, 65, 0.06)',
+                    ]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.cardGradient}
+                  >
+                    <Text style={styles.logoEmoji}>✨</Text>
+                  </LinearGradient>
+                </View>
+
+                {/* Title */}
                 <Text style={styles.title}>AurumX</Text>
                 
-                {/* Underline decoration */}
-                <LinearGradient
-                  colors={['transparent', colors.gold[500], 'transparent']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={styles.titleUnderline}
-                />
+                {/* Simple underline */}
+                <View style={styles.titleUnderline}>
+                  <LinearGradient
+                    colors={[
+                      'transparent',
+                      colors.gold[500],
+                      'transparent',
+                    ]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={styles.underlineGradient}
+                  />
+                </View>
               </Animated.View>
 
-              <Text style={styles.subtitle}>Next-Gen Gold Market Intelligence</Text>
-
-              {/* Loading dots animation */}
-              <View style={styles.loadingContainer}>
-                <Animated.View style={[styles.loadingDot, { opacity: glowOpacity }]} />
-                <Animated.View style={[styles.loadingDot, { opacity: glowOpacity }]} />
-                <Animated.View style={[styles.loadingDot, { opacity: glowOpacity }]} />
-              </View>
+              {/* Subtitle */}
+              <Animated.View style={{ opacity: textOpacity }}>
+                <Text style={styles.subtitle}>Next-Gen Gold Market Intelligence</Text>
+              </Animated.View>
             </View>
 
             <StatusBar style="light" />
@@ -244,96 +230,85 @@ export default function App() {
 const styles = StyleSheet.create({
   splashContainer: {
     flex: 1,
-    position: 'relative',
   },
   splashContent: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 24,
-    position: 'relative',
-    zIndex: 10,
+    padding: 32,
   },
-  shimmerOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    width: width * 2,
-  },
+  // Subtle glow effect
   logoGlow: {
     position: 'absolute',
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    top: '35%',
+    width: 220,
+    height: 220,
+    borderRadius: 110,
   },
   glowGradient: {
     flex: 1,
-    borderRadius: 100,
+    borderRadius: 110,
   },
+  // Logo container
   logoContainer: {
     alignItems: 'center',
+    marginBottom: 40,
+  },
+  // Elegant logo card
+  logoCard: {
+    width: 140,
+    height: 140,
+    borderRadius: 70,
+    overflow: 'hidden',
+    borderWidth: 1.5,
+    borderColor: 'rgba(217, 164, 65, 0.25)',
+    shadowColor: colors.gold[500],
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.4,
+    shadowRadius: 24,
+    elevation: 12,
     marginBottom: 24,
   },
-  emojiGradient: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+  cardGradient: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 20,
-    shadowColor: colors.gold[500],
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.5,
-    shadowRadius: 20,
-    elevation: 15,
   },
+  // Logo emoji
   logoEmoji: {
-    fontSize: 50,
+    fontSize: 64,
+    textShadowColor: colors.gold[400],
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 8,
   },
+  // Title
   title: {
-    fontSize: 48,
+    fontSize: 52,
     fontWeight: '900',
     color: '#FFFFFF',
     letterSpacing: 2,
     textShadowColor: colors.gold[500],
     textShadowOffset: { width: 0, height: 4 },
-    textShadowRadius: 20,
-    marginBottom: 8,
+    textShadowRadius: 16,
+    marginBottom: 12,
   },
+  // Underline
   titleUnderline: {
     width: 120,
     height: 3,
-    marginTop: 8,
     borderRadius: 2,
+    overflow: 'hidden',
   },
+  underlineGradient: {
+    flex: 1,
+  },
+  // Subtitle
   subtitle: {
-    fontSize: 15,
-    fontWeight: '500',
+    fontSize: 13,
+    fontWeight: '600',
     color: colors.gold[300],
-    letterSpacing: 1.5,
+    letterSpacing: 1.8,
     textAlign: 'center',
-    textTransform: 'uppercase',
-    marginTop: 16,
-  },
-  loadingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 48,
-    gap: 12,
-  },
-  loadingDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: colors.gold[500],
-    shadowColor: colors.gold[500],
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.8,
-    shadowRadius: 8,
-    elevation: 5,
+    marginTop: 8,
+    opacity: 0.9,
   },
 });
