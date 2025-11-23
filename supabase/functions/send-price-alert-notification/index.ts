@@ -229,7 +229,7 @@ serve(async (req) => {
     <div class="footer">
       <p>You're receiving this email because you have an active price alert in AurumX.</p>
       <p>To manage your alerts, open the AurumX app on your device.</p>
-      <p>&copy; 2025 AurumX by Fxellence. All rights reserved.</p>
+      <p>&copy; 2025 AurumX. All rights reserved.</p>
     </div>
   </div>
 </body>
@@ -251,7 +251,7 @@ Alert Details:
 Gold is now ${direction} your target price of ${currency} ${targetPrice.toFixed(2)} per ounce.
 
 --
-AurumX by Fxellence
+AurumX
       `;
 
       emailSent = await sendEmailViaSES(userEmail, emailSubject, emailHtml, emailText);

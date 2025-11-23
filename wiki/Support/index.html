@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="AurumX Support - Get help with gold price tracking and alerts">
+    <title>AurumX Support - Help Center</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #D4AF37 0%, #F4E5B1 50%, #D4AF37 100%);
+            padding: 40px 30px;
+            text-align: center;
+            border-bottom: 3px solid #B8941E;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            color: #1a1a1a;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            color: #2d2d2d;
+            font-weight: 500;
+        }
+
+        .content {
+            padding: 40px 30px;
+        }
+
+        .section {
+            margin-bottom: 40px;
+        }
+
+        .section h2 {
+            font-size: 1.8rem;
+            color: #D4AF37;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #F4E5B1;
+        }
+
+        .section h3 {
+            font-size: 1.3rem;
+            color: #2d2d2d;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+
+        .section p {
+            margin-bottom: 15px;
+            color: #555;
+            font-size: 1rem;
+        }
+
+        .section ul {
+            margin-left: 20px;
+            margin-bottom: 15px;
+        }
+
+        .section li {
+            margin-bottom: 8px;
+            color: #555;
+        }
+
+        .faq-item {
+            background: #f9f9f9;
+            border-left: 4px solid #D4AF37;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+        }
+
+        .faq-question {
+            font-weight: 600;
+            color: #2d2d2d;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+
+        .faq-answer {
+            color: #666;
+            line-height: 1.7;
+        }
+
+        .contact-box {
+            background: linear-gradient(135deg, #D4AF37 0%, #F4E5B1 100%);
+            padding: 30px;
+            border-radius: 12px;
+            text-align: center;
+            margin-top: 30px;
+        }
+
+        .contact-box h3 {
+            color: #1a1a1a;
+            margin-bottom: 15px;
+            font-size: 1.5rem;
+        }
+
+        .contact-box p {
+            color: #2d2d2d;
+            margin-bottom: 20px;
+        }
+
+        .contact-box a {
+            color: #1a1a1a;
+            text-decoration: none;
+            font-weight: 600;
+            padding: 12px 30px;
+            background: white;
+            border-radius: 25px;
+            display: inline-block;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .contact-box a:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .feature-card {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 8px;
+            border: 2px solid #F4E5B1;
+        }
+
+        .feature-card h4 {
+            color: #D4AF37;
+            margin-bottom: 10px;
+            font-size: 1.2rem;
+        }
+
+        .feature-card p {
+            color: #666;
+            font-size: 0.95rem;
+        }
+
+        .footer {
+            background: #1a1a1a;
+            color: #999;
+            text-align: center;
+            padding: 20px;
+            font-size: 0.9rem;
+        }
+
+        .footer a {
+            color: #D4AF37;
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .content {
+                padding: 30px 20px;
+            }
+
+            .section h2 {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🪙 AurumX Support</h1>
+            <p>Your Gold Price Tracking Assistant</p>
+        </div>
+
+        <div class="content">
+            <!-- Getting Started -->
+            <div class="section">
+                <h2>📱 Getting Started</h2>
+                <p>Welcome to AurumX! Here's how to get the most out of your gold price tracking experience:</p>
+                
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <h4>1. Sign In</h4>
+                        <p>Use Google Sign-In for quick and secure access to your account.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4>2. View Prices</h4>
+                        <p>Check live gold rates in GBP, USD, and INR on the home screen.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4>3. Set Alerts</h4>
+                        <p>Create custom price alerts to get notified when gold hits your target price.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h4>4. Compare Markets</h4>
+                        <p>Use the comparator to see price differences between markets.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FAQ -->
+            <div class="section">
+                <h2>❓ Frequently Asked Questions</h2>
+
+                <div class="faq-item">
+                    <div class="faq-question">How do I create a price alert?</div>
+                    <div class="faq-answer">
+                        Navigate to the Alerts tab, tap the "+" button, select your currency (GBP, USD, or INR), 
+                        choose the condition (Above or Below), enter your target price, and tap "Create Alert". 
+                        You'll receive both push and email notifications when the price reaches your threshold.
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">Why am I not receiving notifications?</div>
+                    <div class="faq-answer">
+                        Make sure you've:
+                        <ul>
+                            <li>Enabled push notifications in your iOS Settings → AurumX → Notifications</li>
+                            <li>Verified your email address</li>
+                            <li>Turned on the alert toggle in the Alerts tab</li>
+                            <li>Checked your email spam/junk folder</li>
+                        </ul>
+                        Note: Alerts have a 15-minute cooldown to prevent spam.
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">How often are gold prices updated?</div>
+                    <div class="faq-answer">
+                        Gold prices are fetched in real-time from reliable public sources. The app checks for 
+                        price updates regularly and will trigger your alerts as soon as the conditions are met.
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">Is AurumX really free?</div>
+                    <div class="faq-answer">
+                        Yes! AurumX is 100% free with no hidden costs, subscriptions, or in-app purchases. 
+                        There are no ads either. We're committed to keeping it free forever.
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">What data does AurumX collect?</div>
+                    <div class="faq-answer">
+                        We collect only what's essential:
+                        <ul>
+                            <li>Your email address (from Google Sign-In for authentication)</li>
+                            <li>Your price alerts (stored securely in our database)</li>
+                            <li>Your push notification token (to send alerts)</li>
+                        </ul>
+                        We do NOT collect location data, browsing history, analytics, or any tracking data. 
+                        Your privacy is our priority.
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">Can I use AurumX on multiple devices?</div>
+                    <div class="faq-answer">
+                        Yes! Sign in with the same Google account on multiple iOS devices. Your alerts will 
+                        sync across all devices, and you'll receive notifications on each device where you're signed in.
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">How do I delete my account?</div>
+                    <div class="faq-answer">
+                        To delete your account, go to Profile → Settings → Delete Account. This will permanently 
+                        remove all your data including alerts and push tokens. You can also email us at 
+                        contact@aurumx.fxellence.com to request account deletion.
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">Where does the gold price data come from?</div>
+                    <div class="faq-answer">
+                        All gold price data is sourced from reliable, publicly available APIs. We don't provide 
+                        financial advice - AurumX is purely an informational tool for tracking gold market prices.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Troubleshooting -->
+            <div class="section">
+                <h2>🔧 Troubleshooting</h2>
+
+                <h3>App won't load or crashes</h3>
+                <p>Try these steps:</p>
+                <ul>
+                    <li>Force close the app and reopen it</li>
+                    <li>Check your internet connection</li>
+                    <li>Update to the latest version from the App Store</li>
+                    <li>Restart your device</li>
+                    <li>If the issue persists, contact us</li>
+                </ul>
+
+                <h3>Sign-in issues</h3>
+                <p>If you're having trouble signing in with Google:</p>
+                <ul>
+                    <li>Make sure you're connected to the internet</li>
+                    <li>Try signing out of Google in your device settings and sign in again</li>
+                    <li>Clear Safari cache (Settings → Safari → Clear History and Website Data)</li>
+                    <li>Check if Google services are working (try signing in elsewhere)</li>
+                </ul>
+
+                <h3>Prices not updating</h3>
+                <p>If gold prices seem outdated:</p>
+                <ul>
+                    <li>Pull down on the screen to refresh manually</li>
+                    <li>Check your internet connection</li>
+                    <li>Close and reopen the app</li>
+                </ul>
+            </div>
+
+            <!-- Features -->
+            <div class="section">
+                <h2>✨ Features Overview</h2>
+
+                <h3>📊 Live Gold Rates</h3>
+                <p>View real-time gold prices per ounce in three major currencies: British Pound (GBP), 
+                US Dollar (USD), and Indian Rupee (INR). Prices are automatically refreshed to keep you 
+                updated with the latest market movements.</p>
+
+                <h3>🔔 Smart Price Alerts</h3>
+                <p>Set unlimited custom alerts with "Above" or "Below" conditions. Get instant notifications 
+                via push and email when your target price is hit. Smart 15-minute cooldown prevents notification spam.</p>
+
+                <h3>💱 Price Comparator</h3>
+                <p>Compare gold prices between any two markets instantly. See the price difference and make 
+                informed decisions about when and where to buy or sell.</p>
+
+                <h3>🎨 Premium Design</h3>
+                <p>Enjoy a beautiful dark mode interface with elegant gold accents, smooth animations, and 
+                intuitive navigation designed for the best user experience.</p>
+            </div>
+
+            <!-- Contact -->
+            <div class="contact-box">
+                <h3>💬 Still Need Help?</h3>
+                <p>We're here to help! Reach out to our support team.</p>
+                <a href="mailto:contact@aurumx.fxellence.com">📧 Email Support</a>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>
+                &copy; 2024-2025 AurumX. All rights reserved. | 
+                <a href="https://github.com/fxellence-dev/AurumX">GitHub</a>
+            </p>
+            <p style="margin-top: 10px; font-size: 0.85rem;">
+                AurumX is a free, open-source project. No ads. No tracking. Privacy-first.
+            </p>
+        </div>
+    </div>
+</body>
+</html>

@@ -65,6 +65,6 @@ If you find any real credentials, replace them with placeholders before pushing.
 
 ### Reporting Security Issues
 
-If you discover a security vulnerability, please email: contact@fxellence.com
+If you discover a security vulnerability, please email: contact@aurumx.fxellence.com
 
 Do NOT open a public issue for security vulnerabilities.
