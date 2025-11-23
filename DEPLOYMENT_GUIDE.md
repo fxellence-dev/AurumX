@@ -174,8 +174,8 @@ Before building, verify these files exist and are correct:
 
 ### 1. `.env` file (DO NOT commit to git!)
 ```env
-EXPO_PUBLIC_SUPABASE_URL=https://qdpunpuwyyrtookkbtdh.supabase.co
-EXPO_PUBLIC_SUPABASE_ANON_KEY=eyJhbGci...
+EXPO_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
+EXPO_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key-here
 ```
 
 ### 2. `.gitignore` (ensure .env is ignored)

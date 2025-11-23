@@ -89,7 +89,7 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
 DECLARE
-  v_supabase_url TEXT := 'https://qdpunpuwyyrtookkbtdh.supabase.co';
+  v_supabase_url TEXT := 'https://YOUR-PROJECT-ID.supabase.co';
   v_service_key TEXT;
   v_response_id BIGINT;
 BEGIN

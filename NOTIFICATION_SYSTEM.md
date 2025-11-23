@@ -53,7 +53,7 @@ Send real-time push notifications (iOS) and email alerts when gold prices meet u
 - Handle notification interactions
 
 ### 2. Supabase Database
-**Project**: `qdpunpuwyyrtookkbtdh`
+**Project**: `YOUR-PROJECT-ID`
 
 **Tables**:
 ```sql
@@ -357,9 +357,9 @@ WHERE name = 'supabase_service_key';
 ```
 
 **AWS Credentials** (Edge Function Env Vars):
-- `AWS_REGION` = us-east-1
-- `AWS_ACCESS_KEY_ID` = AKIAWJFBSOEY4HHHTF7F
-- `AWS_SECRET_ACCESS_KEY` = lTiUSQ8mci7ZvDCfGW8y9mFR2rfN3ssSJI4CWJ0N
+- `AWS_REGION` = us-east-1 (or your preferred region)
+- `AWS_ACCESS_KEY_ID` = [Your AWS Access Key ID]
+- `AWS_SECRET_ACCESS_KEY` = [Your AWS Secret Access Key]
 
 **APNs Credentials**:
 - Stored in EAS Build credentials
@@ -493,9 +493,9 @@ WHERE proname = 'send_alert_notification';
 Project → Edge Functions → send-price-alert-notification → Settings
 
 Add three secrets:
-- AWS_REGION = us-east-1
-- AWS_ACCESS_KEY_ID = AKIAWJFBSOEY4HHHTF7F
-- AWS_SECRET_ACCESS_KEY = lTiUSQ8mci7ZvDCfGW8y9mFR2rfN3ssSJI4CWJ0N
+- AWS_REGION = us-east-1 (or your preferred region)
+- AWS_ACCESS_KEY_ID = [Your AWS Access Key ID]
+- AWS_SECRET_ACCESS_KEY = [Your AWS Secret Access Key]
 ```
 
 **2. Deploy Function**:

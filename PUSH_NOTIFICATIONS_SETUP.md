@@ -416,7 +416,7 @@ GRANT ALL ON public.user_push_tokens TO authenticated;
 GRANT ALL ON public.user_push_tokens TO service_role;
 ```
 
-Run this in Supabase SQL Editor: https://supabase.com/dashboard/project/qdpunpuwyyrtookkbtdh/sql
+Run this in Supabase SQL Editor: https://supabase.com/dashboard/project/YOUR-PROJECT-ID/sql
 
 ---
 
@@ -559,7 +559,7 @@ npm install -g supabase
 supabase login
 
 # Link your project
-supabase link --project-ref qdpunpuwyyrtookkbtdh
+supabase link --project-ref YOUR-PROJECT-ID
 
 # Deploy the function
 supabase functions deploy send-price-alert-notification
@@ -649,7 +649,7 @@ In Supabase Dashboard → Settings → API:
 
 ```sql
 -- Set configuration for Edge Function URL
-ALTER DATABASE postgres SET app.supabase_url = 'https://qdpunpuwyyrtookkbtdh.supabase.co';
+ALTER DATABASE postgres SET app.supabase_url = 'https://YOUR-PROJECT-ID.supabase.co';
 ALTER DATABASE postgres SET app.supabase_service_key = 'YOUR_SERVICE_ROLE_KEY';
 ```
 
@@ -740,7 +740,7 @@ eas submit --platform ios --latest
 ```bash
 # Call your edge function directly
 curl -X POST \
-  'https://qdpunpuwyyrtookkbtdh.supabase.co/functions/v1/send-price-alert-notification' \
+  'https://YOUR-PROJECT-ID.supabase.co/functions/v1/send-price-alert-notification' \
   -H 'Authorization: Bearer YOUR_SERVICE_ROLE_KEY' \
   -H 'Content-Type: application/json' \
   -d '{

@@ -13,8 +13,8 @@ Your app uses **Expo's environment variable system** to securely pass configurat
 **Location**: `/Users/amitmahajan/Documents/Projects/Gold-App/gold-hub-mobile/.env`
 
 ```env
-EXPO_PUBLIC_SUPABASE_URL=https://qdpunpuwyyrtookkbtdh.supabase.co
-EXPO_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+EXPO_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
+EXPO_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key-here
 ```
 
 **Key Points**:
@@ -58,7 +58,7 @@ const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL!;
 
 **After Build** (in the JavaScript bundle):
 ```typescript
-const SUPABASE_URL = "https://qdpunpuwyyrtookkbtdh.supabase.co";
+const SUPABASE_URL = "https://YOUR-PROJECT-ID.supabase.co";
 ```
 
 ---
@@ -76,7 +76,7 @@ const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!;
 
 // 2. Create Supabase client with these values
 export const supabase = createClient<Database>(
-  SUPABASE_URL,      // ← "https://qdpunpuwyyrtookkbtdh.supabase.co"
+  SUPABASE_URL,      // ← "https://YOUR-PROJECT-ID.supabase.co"
   SUPABASE_ANON_KEY, // ← "eyJhbGci..."
   {
     auth: {
@@ -139,7 +139,7 @@ For your iOS TestFlight build, environment variables are handled differently:
 
 ```bash
 # Set secrets in EAS (one-time setup)
-eas secret:create --scope project --name EXPO_PUBLIC_SUPABASE_URL --value "https://qdpunpuwyyrtookkbtdh.supabase.co"
+eas secret:create --scope project --name EXPO_PUBLIC_SUPABASE_URL --value "https://YOUR-PROJECT-ID.supabase.co"
 eas secret:create --scope project --name EXPO_PUBLIC_SUPABASE_ANON_KEY --value "eyJhbGci..."
 ```
 

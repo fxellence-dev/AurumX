@@ -17,7 +17,7 @@ This happens because you can't set custom database parameters directly. Instead,
 
 1. **Go to Project Settings:**
    ```
-   https://supabase.com/dashboard/project/qdpunpuwyyrtookkbtdh/settings/api
+   https://supabase.com/dashboard/project/YOUR-PROJECT-ID/settings/api
    ```
 
 2. **Find "Project API keys" section**
@@ -32,7 +32,7 @@ This happens because you can't set custom database parameters directly. Instead,
 
 1. **Go to SQL Editor:**
    ```
-   https://supabase.com/dashboard/project/qdpunpuwyyrtookkbtdh/sql/new
+   https://supabase.com/dashboard/project/YOUR-PROJECT-ID/sql/new
    ```
 
 2. **Run this SQL command:**
@@ -155,7 +155,7 @@ Continue to **Phase 6: Deploy Edge Function**
 
 ```bash
 supabase login
-supabase link --project-ref qdpunpuwyyrtookkbtdh
+supabase link --project-ref YOUR-PROJECT-ID
 supabase functions deploy send-price-alert-notification
 ```
 
