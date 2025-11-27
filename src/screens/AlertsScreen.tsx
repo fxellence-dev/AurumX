@@ -12,14 +12,18 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Image,
+  Platform,
 } from 'react-native';
+import * as AppleAuthentication from 'expo-apple-authentication';
 import type { MainTabScreenProps } from '@/navigation/types';
 import { colors } from '@/theme';
 import { Bell, Plus, LogOut, TrendingUp } from 'lucide-react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '@/contexts/AuthContext';
 import { TradingViewMiniWidget } from '@/components/TradingViewMiniWidget';
 import { CreateAlertModal } from '@/components/CreateAlertModal';
+import { EmailAuthModal } from '@/components/EmailAuthModal';
 import { useCustomAlert } from '@/components/CustomAlert';
 import { AlertListItem } from '@/components/AlertListItem';
 import { supabase } from '@/lib/supabase';
@@ -36,11 +40,17 @@ const GOLD_SYMBOLS = [
 const ALERTS_PER_PAGE = 5;
 
 export default function AlertsScreen({ navigation }: MainTabScreenProps<'Alerts'>) {
-  const { user, loading, signInWithGoogle, signOut } = useAuth();
+  const { user, loading, signInWithGoogle, signInWithApple, signOut } = useAuth();
   const { showAlert, AlertComponent } = useCustomAlert();
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [selectedCurrency, setSelectedCurrency] = useState(0); // Index of selected currency
   const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
+  const [isEmailAuthModalVisible, setIsEmailAuthModalVisible] = useState(false);
+  
+  // Debug: Log when email modal visibility changes
+  useEffect(() => {
+    console.log('📧 isEmailAuthModalVisible changed to:', isEmailAuthModalVisible);
+  }, [isEmailAuthModalVisible]);
   
   // Alerts state
   const [alerts, setAlerts] = useState<GoldRateAlert[]>([]);
@@ -60,6 +70,18 @@ export default function AlertsScreen({ navigation }: MainTabScreenProps<'Alerts'
         'Sign In Failed',
         'Unable to sign in with Google. Please try again.'
       );
+    } finally {
+      setIsSigningIn(false);
+    }
+  };
+
+  const handleAppleSignIn = async () => {
+    try {
+      setIsSigningIn(true);
+      await signInWithApple();
+    } catch (error) {
+      console.error('Apple sign in failed:', error);
+      // Error is already handled in AuthContext with Alert
     } finally {
       setIsSigningIn(false);
     }
@@ -240,36 +262,81 @@ export default function AlertsScreen({ navigation }: MainTabScreenProps<'Alerts'
             Get notified when gold prices hit your target. Create custom alerts for different markets and currencies.
           </Text>
 
-          {/* Sign in button */}
-          <TouchableOpacity
-            style={styles.signInButton}
-            onPress={handleSignIn}
-            disabled={isSigningIn}
-          >
-            <LinearGradient
-              colors={['#FFFFFF', '#F3F4F6']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.signInGradient}
+          {/* Sign in buttons */}
+          <View style={styles.signInButtonsContainer}>
+            {/* Apple Sign In Button - Show on iOS only */}
+            {Platform.OS === 'ios' && (
+              <AppleAuthentication.AppleAuthenticationButton
+                buttonType={AppleAuthentication.AppleAuthenticationButtonType.CONTINUE}
+                buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.WHITE}
+                cornerRadius={12}
+                style={styles.appleButton}
+                onPress={handleAppleSignIn}
+              />
+            )}
+
+            {/* Google Sign In Button */}
+            <TouchableOpacity
+              style={styles.signInButton}
+              onPress={handleSignIn}
+              disabled={isSigningIn}
             >
-              {isSigningIn ? (
-                <ActivityIndicator size="small" color="#1F2937" />
-              ) : (
+              <LinearGradient
+                colors={['#FFFFFF', '#F3F4F6']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.signInGradient}
+              >
+                {isSigningIn ? (
+                  <ActivityIndicator size="small" color="#1F2937" />
+                ) : (
+                  <>
+                    <Image
+                      source={{ uri: 'https://www.google.com/favicon.ico' }}
+                      style={styles.googleIcon}
+                    />
+                    <Text style={styles.signInText}>Continue with Google</Text>
+                  </>
+                )}
+              </LinearGradient>
+            </TouchableOpacity>
+
+            {/* Email Sign In Button */}
+            <TouchableOpacity
+              style={styles.signInButton}
+              onPress={() => {
+                console.log('📧 Email button pressed');
+                setIsEmailAuthModalVisible(true);
+              }}
+              disabled={isSigningIn}
+            >
+              <LinearGradient
+                colors={['#FFFFFF', '#F3F4F6']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.signInGradient}
+              >
                 <>
-                  <Image
-                    source={{ uri: 'https://www.google.com/favicon.ico' }}
-                    style={styles.googleIcon}
-                  />
-                  <Text style={styles.signInText}>Continue with Google</Text>
+                  <Ionicons name="mail-outline" size={24} color="#1F2937" />
+                  <Text style={styles.signInText}>Continue with Email</Text>
                 </>
-              )}
-            </LinearGradient>
-          </TouchableOpacity>
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
 
           <Text style={styles.privacyText}>
             We'll never post without your permission
           </Text>
         </ScrollView>
+        
+        {/* Email Auth Modal - Must be inside this View to render when not authenticated */}
+        <EmailAuthModal
+          visible={isEmailAuthModalVisible}
+          onClose={() => {
+            console.log('📧 Modal close requested');
+            setIsEmailAuthModalVisible(false);
+          }}
+        />
       </View>
     );
   }
@@ -431,6 +498,15 @@ export default function AlertsScreen({ navigation }: MainTabScreenProps<'Alerts'
         }}
       />
 
+      {/* Email Auth Modal */}
+      <EmailAuthModal
+        visible={isEmailAuthModalVisible}
+        onClose={() => {
+          console.log('📧 Modal close requested');
+          setIsEmailAuthModalVisible(false);
+        }}
+      />
+
       {/* Custom Alert Component */}
       {AlertComponent}
     </View>
@@ -510,9 +586,17 @@ const styles = StyleSheet.create({
     marginBottom: 32,
     lineHeight: 24,
   },
+  signInButtonsContainer: {
+    width: '100%',
+    gap: 16,
+    marginBottom: 16,
+  },
+  appleButton: {
+    width: '100%',
+    height: 56,
+  },
   signInButton: {
     width: '100%',
-    marginBottom: 16,
     borderRadius: 12,
     overflow: 'hidden',
   },

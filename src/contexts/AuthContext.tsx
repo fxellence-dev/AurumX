@@ -12,6 +12,8 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
+import * as AppleAuthentication from 'expo-apple-authentication';
+import { Alert, Platform } from 'react-native';
 import { supabase, ExpoSecureStoreAdapter } from '@/lib/supabase';
 import {
   registerForPushNotificationsAsync,
@@ -27,6 +29,10 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   signInWithGoogle: () => Promise<void>;
+  signInWithApple: () => Promise<void>;
+  signInWithEmail: (email: string, password: string) => Promise<void>;
+  signUpWithEmail: (email: string, password: string, fullName: string) => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -58,10 +64,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Handle deep links for OAuth callback
+  // Handle deep links for OAuth callback, email verification, and password reset
   useEffect(() => {
     const handleDeepLink = async (event: { url: string }) => {
       const url = event.url;
+      console.log('🔗 Deep link received:', url);
       
       // Check if this is an auth callback
       if (url?.includes('auth/callback')) {
@@ -78,6 +85,76 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
           if (error) {
             console.error('Error setting session:', error);
+          }
+        }
+      }
+      
+      // Handle email confirmation (aurumx://email-confirmed#access_token=...)
+      if (url?.includes('email-confirmed')) {
+        console.log('📧 Email confirmation link clicked');
+        const hash = url.split('#')[1];
+        if (hash) {
+          const params = new URLSearchParams(hash);
+          const access_token = params.get('access_token');
+          const refresh_token = params.get('refresh_token');
+          
+          if (access_token && refresh_token) {
+            const { error } = await supabase.auth.setSession({
+              access_token,
+              refresh_token,
+            });
+            
+            if (!error) {
+              Alert.alert('✅ Email Verified!', 'Your email has been confirmed. Welcome to AurumX! 🎉');
+            }
+          }
+        }
+      }
+      
+      // Handle password reset (aurumx://reset-password#access_token=...)
+      if (url?.includes('reset-password')) {
+        console.log('🔑 Password reset link clicked');
+        const hash = url.split('#')[1];
+        if (hash) {
+          const params = new URLSearchParams(hash);
+          const access_token = params.get('access_token');
+          
+          if (access_token) {
+            // Store the access token and show password reset prompt
+            Alert.prompt(
+              '🔑 Reset Your Password',
+              'Enter your new password:',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                  text: 'Update Password',
+                  onPress: async (password) => {
+                    if (!password || password.length < 6) {
+                      Alert.alert('Error', 'Password must be at least 6 characters');
+                      return;
+                    }
+                    
+                    // Set the session first
+                    await supabase.auth.setSession({
+                      access_token,
+                      refresh_token: params.get('refresh_token') || '',
+                    });
+                    
+                    // Update the password
+                    const { error } = await supabase.auth.updateUser({
+                      password: password,
+                    });
+                    
+                    if (error) {
+                      Alert.alert('Error', error.message);
+                    } else {
+                      Alert.alert('✅ Password Updated!', 'You can now sign in with your new password.');
+                    }
+                  },
+                },
+              ],
+              'secure-text'
+            );
           }
         }
       }
@@ -197,6 +274,171 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const signInWithApple = async () => {
+    try {
+      console.log('🍎 Starting Apple Sign-In...');
+      
+      // Check if Apple Authentication is available (only on real iOS devices)
+      const isAvailable = await AppleAuthentication.isAvailableAsync();
+      
+      if (!isAvailable) {
+        console.log('⚠️ Apple Sign-In not available');
+        Alert.alert(
+          'Not Available',
+          Platform.OS === 'ios' 
+            ? 'Sign in with Apple is only available on physical iOS devices, not in simulators.'
+            : 'Sign in with Apple is only available on iOS devices.'
+        );
+        return;
+      }
+
+      // Request Apple credentials
+      const credential = await AppleAuthentication.signInAsync({
+        requestedScopes: [
+          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+          AppleAuthentication.AppleAuthenticationScope.EMAIL,
+        ],
+      });
+
+      console.log('🍎 Apple credential received');
+      console.log('- User ID:', credential.user);
+      console.log('- Has identity token:', !!credential.identityToken);
+      console.log('- Email:', credential.email || 'Hidden');
+      console.log('- Name:', credential.fullName?.givenName || 'Not provided');
+
+      // Sign in with Supabase using Apple ID token
+      const { data, error } = await supabase.auth.signInWithIdToken({
+        provider: 'apple',
+        token: credential.identityToken!,
+      });
+
+      if (error) {
+        console.error('❌ Supabase Apple Sign-In error:', error);
+        throw error;
+      }
+
+      console.log('✅ Apple Sign-In successful!');
+      console.log('User email:', data.user?.email);
+
+      // Register for push notifications after successful sign in
+      if (data?.user) {
+        try {
+          console.log('📱 Registering for push notifications...');
+          const pushToken = await registerForPushNotificationsAsync();
+          
+          if (pushToken) {
+            await savePushTokenToDatabase(data.user.id, pushToken, supabase);
+            console.log('✅ Push token registered and saved');
+          } else {
+            console.log('⚠️ No push token received');
+          }
+        } catch (pushError) {
+          console.error('⚠️ Failed to register push notifications:', pushError);
+          // Don't throw - push notifications are not critical for sign in
+        }
+      }
+    } catch (error: any) {
+      if (error.code === 'ERR_REQUEST_CANCELED') {
+        console.log('⚠️ User canceled Apple Sign-In');
+        // Don't show alert for user cancellation
+      } else {
+        console.error('❌ Apple Sign-In error:', error);
+        Alert.alert(
+          'Sign In Failed',
+          error.message || 'Failed to sign in with Apple. Please try again.'
+        );
+      }
+    }
+  };
+
+  const signInWithEmail = async (email: string, password: string) => {
+    try {
+      console.log('📧 Signing in with email...');
+      
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        console.error('❌ Email sign-in error:', error);
+        throw error;
+      }
+
+      console.log('✅ Signed in with email successfully');
+
+      // Register for push notifications
+      if (data.user) {
+        console.log('📱 Registering for push notifications...');
+        await registerForPushNotificationsAsync();
+      }
+    } catch (error) {
+      console.error('Email sign-in error:', error);
+      throw error;
+    }
+  };
+
+  const signUpWithEmail = async (email: string, password: string, fullName: string) => {
+    try {
+      console.log('📝 Signing up with email...');
+      
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: fullName,
+            name: fullName,
+          },
+          emailRedirectTo: 'aurumx://email-confirmed',
+        },
+      });
+
+      if (error) {
+        console.error('❌ Email sign-up error:', error);
+        throw error;
+      }
+
+      if (data.user && !data.session) {
+        // Email confirmation required
+        console.log('📧 Email confirmation required');
+        throw new Error('CONFIRMATION_REQUIRED');
+      }
+
+      console.log('✅ Signed up with email successfully');
+
+      // Register for push notifications
+      if (data.user) {
+        console.log('📱 Registering for push notifications...');
+        await registerForPushNotificationsAsync();
+      }
+    } catch (error) {
+      console.error('Email sign-up error:', error);
+      throw error;
+    }
+  };
+
+  const resetPassword = async (email: string) => {
+    try {
+      console.log('🔑 Sending password reset email...');
+      
+      // Use deep link to open directly in the app
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: 'aurumx://reset-password',
+      });
+
+      if (error) {
+        console.error('❌ Password reset error:', error);
+        throw error;
+      }
+
+      console.log('✅ Password reset email sent');
+    } catch (error) {
+      console.error('Password reset error:', error);
+      throw error;
+    }
+  };
+
   const signOut = async () => {
     try {
       console.log('🔓 Signing out...');
@@ -275,6 +517,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         user,
         loading,
         signInWithGoogle,
+        signInWithApple,
+        signInWithEmail,
+        signUpWithEmail,
+        resetPassword,
         signOut,
       }}
     >
