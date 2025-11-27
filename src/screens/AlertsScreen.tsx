@@ -42,15 +42,21 @@ const ALERTS_PER_PAGE = 5;
 export default function AlertsScreen({ navigation }: MainTabScreenProps<'Alerts'>) {
   const { user, loading, signInWithGoogle, signInWithApple, signOut } = useAuth();
   const { showAlert, AlertComponent } = useCustomAlert();
-  const [isSigningIn, setIsSigningIn] = useState(false);
-  const [selectedCurrency, setSelectedCurrency] = useState(0); // Index of selected currency
-  const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
+  
+  // Separate loading states for each auth method
+  const [isAppleSigningIn, setIsAppleSigningIn] = useState(false);
+  const [isGoogleSigningIn, setIsGoogleSigningIn] = useState(false);
   const [isEmailAuthModalVisible, setIsEmailAuthModalVisible] = useState(false);
   
-  // Debug: Log when email modal visibility changes
+  const [selectedCurrency, setSelectedCurrency] = useState(0); // Index of selected currency
+  const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
+  
+  // Close email modal when user successfully logs in
   useEffect(() => {
-    console.log('📧 isEmailAuthModalVisible changed to:', isEmailAuthModalVisible);
-  }, [isEmailAuthModalVisible]);
+    if (user) {
+      setIsEmailAuthModalVisible(false);
+    }
+  }, [user]);
   
   // Alerts state
   const [alerts, setAlerts] = useState<GoldRateAlert[]>([]);
@@ -61,7 +67,7 @@ export default function AlertsScreen({ navigation }: MainTabScreenProps<'Alerts'
 
   const handleSignIn = async () => {
     try {
-      setIsSigningIn(true);
+      setIsGoogleSigningIn(true);
       await signInWithGoogle();
     } catch (error) {
       console.error('Sign in failed:', error);
@@ -71,19 +77,19 @@ export default function AlertsScreen({ navigation }: MainTabScreenProps<'Alerts'
         'Unable to sign in with Google. Please try again.'
       );
     } finally {
-      setIsSigningIn(false);
+      setIsGoogleSigningIn(false);
     }
   };
 
   const handleAppleSignIn = async () => {
     try {
-      setIsSigningIn(true);
+      setIsAppleSigningIn(true);
       await signInWithApple();
     } catch (error) {
       console.error('Apple sign in failed:', error);
       // Error is already handled in AuthContext with Alert
     } finally {
-      setIsSigningIn(false);
+      setIsAppleSigningIn(false);
     }
   };
 
@@ -266,20 +272,30 @@ export default function AlertsScreen({ navigation }: MainTabScreenProps<'Alerts'
           <View style={styles.signInButtonsContainer}>
             {/* Apple Sign In Button - Show on iOS only */}
             {Platform.OS === 'ios' && (
-              <AppleAuthentication.AppleAuthenticationButton
-                buttonType={AppleAuthentication.AppleAuthenticationButtonType.CONTINUE}
-                buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.WHITE}
-                cornerRadius={12}
-                style={styles.appleButton}
-                onPress={handleAppleSignIn}
-              />
+              <View style={styles.appleButtonWrapper}>
+                <AppleAuthentication.AppleAuthenticationButton
+                  buttonType={AppleAuthentication.AppleAuthenticationButtonType.CONTINUE}
+                  buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.WHITE}
+                  cornerRadius={12}
+                  style={[
+                    styles.appleButton,
+                    (isAppleSigningIn || isGoogleSigningIn) && styles.buttonDisabled
+                  ]}
+                  onPress={handleAppleSignIn}
+                />
+                {isAppleSigningIn && (
+                  <View style={styles.buttonLoadingOverlay}>
+                    <ActivityIndicator size="small" color="#000000" />
+                  </View>
+                )}
+              </View>
             )}
 
             {/* Google Sign In Button */}
             <TouchableOpacity
               style={styles.signInButton}
               onPress={handleSignIn}
-              disabled={isSigningIn}
+              disabled={isGoogleSigningIn || isAppleSigningIn}
             >
               <LinearGradient
                 colors={['#FFFFFF', '#F3F4F6']}
@@ -287,7 +303,7 @@ export default function AlertsScreen({ navigation }: MainTabScreenProps<'Alerts'
                 end={{ x: 1, y: 1 }}
                 style={styles.signInGradient}
               >
-                {isSigningIn ? (
+                {isGoogleSigningIn ? (
                   <ActivityIndicator size="small" color="#1F2937" />
                 ) : (
                   <>
@@ -308,7 +324,7 @@ export default function AlertsScreen({ navigation }: MainTabScreenProps<'Alerts'
                 console.log('📧 Email button pressed');
                 setIsEmailAuthModalVisible(true);
               }}
-              disabled={isSigningIn}
+              disabled={isGoogleSigningIn || isAppleSigningIn}
             >
               <LinearGradient
                 colors={['#FFFFFF', '#F3F4F6']}
@@ -591,9 +607,27 @@ const styles = StyleSheet.create({
     gap: 16,
     marginBottom: 16,
   },
+  appleButtonWrapper: {
+    position: 'relative',
+    width: '100%',
+  },
   appleButton: {
     width: '100%',
     height: 56,
+  },
+  buttonDisabled: {
+    opacity: 0.5,
+  },
+  buttonLoadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    borderRadius: 12,
   },
   signInButton: {
     width: '100%',

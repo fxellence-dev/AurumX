@@ -105,7 +105,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             });
             
             if (!error) {
-              Alert.alert('✅ Email Verified!', 'Your email has been confirmed. Welcome to AurumX! 🎉');
+              // Show success message after a short delay to let the UI update
+              setTimeout(() => {
+                Alert.alert(
+                  '✅ Email Verified!',
+                  'Your email has been confirmed. Welcome to AurumX! 🎉'
+                );
+              }, 300);
             }
           }
         }
@@ -118,43 +124,65 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (hash) {
           const params = new URLSearchParams(hash);
           const access_token = params.get('access_token');
+          const refresh_token = params.get('refresh_token');
           
           if (access_token) {
-            // Store the access token and show password reset prompt
-            Alert.prompt(
-              '🔑 Reset Your Password',
-              'Enter your new password:',
-              [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                  text: 'Update Password',
-                  onPress: async (password) => {
-                    if (!password || password.length < 6) {
-                      Alert.alert('Error', 'Password must be at least 6 characters');
-                      return;
-                    }
-                    
-                    // Set the session first
-                    await supabase.auth.setSession({
-                      access_token,
-                      refresh_token: params.get('refresh_token') || '',
-                    });
-                    
-                    // Update the password
-                    const { error } = await supabase.auth.updateUser({
-                      password: password,
-                    });
-                    
-                    if (error) {
-                      Alert.alert('Error', error.message);
-                    } else {
-                      Alert.alert('✅ Password Updated!', 'You can now sign in with your new password.');
+            // Show password reset prompt immediately (works from any screen)
+            // Use a small delay to ensure the app UI has loaded
+            setTimeout(() => {
+              Alert.prompt(
+                '🔑 Reset Your Password',
+                'Enter your new password (minimum 6 characters):',
+                [
+                  { 
+                    text: 'Cancel', 
+                    style: 'cancel',
+                    onPress: () => {
+                      console.log('Password reset cancelled');
                     }
                   },
-                },
-              ],
-              'secure-text'
-            );
+                  {
+                    text: 'Update',
+                    onPress: async (password?: string) => {
+                      if (!password || password.length < 6) {
+                        Alert.alert('Error', 'Password must be at least 6 characters');
+                        return;
+                      }
+                      
+                      try {
+                        // Set the session first (temporarily)
+                        await supabase.auth.setSession({
+                          access_token,
+                          refresh_token: refresh_token || '',
+                        });
+                        
+                        // Update the password
+                        const { error } = await supabase.auth.updateUser({
+                          password: password,
+                        });
+                        
+                        if (error) {
+                          Alert.alert('Error', error.message);
+                          // Sign out since password wasn't changed
+                          await supabase.auth.signOut();
+                        } else {
+                          // Password updated successfully - user is now logged in with new password
+                          Alert.alert(
+                            '✅ Password Updated!',
+                            'Your password has been changed successfully. You are now signed in.'
+                          );
+                        }
+                      } catch (error: any) {
+                        Alert.alert('Error', error.message || 'Failed to update password');
+                        // Sign out on error
+                        await supabase.auth.signOut();
+                      }
+                    },
+                  },
+                ],
+                'secure-text'
+              );
+            }, 500);
           }
         }
       }
