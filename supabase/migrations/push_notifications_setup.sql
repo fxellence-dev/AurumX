@@ -89,7 +89,7 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
 DECLARE
-  v_supabase_url TEXT := 'https://YOUR-PROJECT-ID.supabase.co';
+  v_supabase_url TEXT := 'https://qdpunpuwyyrtookkbtdh.supabase.co';
   v_service_key TEXT;
   v_response_id BIGINT;
 BEGIN
@@ -119,7 +119,8 @@ BEGIN
       'targetPrice', p_target_price,
       'currency', p_currency,
       'condition', p_condition
-    )
+    ),
+    timeout_milliseconds := 30000
   ) INTO v_response_id;
 
   -- Log the request
@@ -163,11 +164,11 @@ BEGIN
       ga.target_price,
       ga.currency,
       ga.condition,
-      ga.is_active,
+      ga.enabled,
       ga.last_triggered_at
     FROM public.gold_rate_alerts ga
     WHERE ga.currency = NEW.currency
-      AND ga.is_active = true
+      AND ga.enabled = true
   LOOP
     -- Check if alert conditions are met
     IF (alert_record.condition = 'above' AND current_price >= alert_record.target_price) OR

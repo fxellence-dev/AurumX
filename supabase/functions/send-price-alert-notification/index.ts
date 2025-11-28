@@ -254,7 +254,28 @@ Gold is now ${direction} your target price of ${currency} ${targetPrice.toFixed(
 AurumX
       `;
 
-      emailSent = await sendEmailViaSES(userEmail, emailSubject, emailHtml, emailText);
+      // Only attempt email if AWS credentials are configured
+      const awsConfigured = Deno.env.get('AWS_ACCESS_KEY_ID') && Deno.env.get('AWS_SECRET_ACCESS_KEY');
+      if (awsConfigured) {
+        console.log('📧 AWS credentials found, attempting email send...');
+        try {
+          // Add timeout protection for email sending
+          const emailPromise = sendEmailViaSES(userEmail, emailSubject, emailHtml, emailText);
+          const timeoutPromise = new Promise<boolean>((resolve) => {
+            setTimeout(() => {
+              console.log('⚠️ Email send timeout after 3 seconds');
+              resolve(false);
+            }, 3000);
+          });
+          emailSent = await Promise.race([emailPromise, timeoutPromise]);
+        } catch (emailError) {
+          console.error('❌ Email send failed:', emailError);
+          emailSent = false;
+        }
+      } else {
+        console.log('ℹ️ AWS credentials not configured - skipping email');
+        emailSent = false;
+      }
     }
 
     // Log to notification_logs table
