@@ -34,6 +34,7 @@ interface AuthContextType {
   signUpWithEmail: (email: string, password: string, fullName: string) => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   signOut: () => Promise<void>;
+  deleteAccount: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -569,6 +570,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const deleteAccount = async () => {
+    try {
+      console.log('🗑️ Deleting account...');
+      
+      if (!user) {
+        throw new Error('No user logged in');
+      }
+
+      // Call Supabase RPC function to delete user
+      const { error } = await supabase.rpc('delete_user');
+      
+      if (error) {
+        console.error('❌ Delete account error:', error);
+        throw error;
+      }
+      
+      console.log('✅ Account deleted successfully');
+      
+      // Sign out after deletion
+      await signOut();
+    } catch (error) {
+      console.error('Delete account error:', error);
+      throw error;
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -581,6 +608,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signUpWithEmail,
         resetPassword,
         signOut,
+        deleteAccount,
       }}
     >
       {children}

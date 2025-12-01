@@ -4,10 +4,11 @@
  */
 
 import React from 'react';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Linking } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Linking, Alert } from 'react-native';
 import type { MainTabScreenProps } from '@/navigation/types';
 import { colors } from '@/theme';
-import { ExternalLink, Shield, Award, TrendingUp, Star } from 'lucide-react-native';
+import { ExternalLink, Shield, Award, TrendingUp, Star, User, Trash2, Mail, LogOut } from 'lucide-react-native';
+import { useAuth } from '@/contexts/AuthContext';
 
 // UK Gold Investment Dealers
 const GOLD_DEALERS = [
@@ -54,8 +55,87 @@ const GOLD_DEALERS = [
 ];
 
 export default function ExtraScreen({ navigation }: MainTabScreenProps<'Extra'>) {
+  const { user, signOut, deleteAccount } = useAuth();
+
   const openWebsite = (url: string) => {
     Linking.openURL(url);
+  };
+
+  const handleSignOut = async () => {
+    Alert.alert(
+      'Sign Out',
+      'Are you sure you want to sign out?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Sign Out',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await signOut();
+            } catch (error) {
+              console.error('Sign out error:', error);
+              Alert.alert('Error', 'Failed to sign out');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      'Delete Account',
+      'Are you sure you want to permanently delete your account?\n\n⚠️ This action cannot be undone.\n\nAll your data will be permanently removed:\n• All price alerts\n• Notification settings\n• Account information',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            // Second confirmation
+            Alert.alert(
+              'Final Confirmation',
+              'Type DELETE in the next prompt to confirm',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                  text: 'Continue',
+                  style: 'destructive',
+                  onPress: () => {
+                    Alert.prompt(
+                      'Confirm Deletion',
+                      'Type DELETE to permanently delete your account',
+                      [
+                        { text: 'Cancel', style: 'cancel' },
+                        {
+                          text: 'Delete',
+                          style: 'destructive',
+                          onPress: async (input) => {
+                            if (input === 'DELETE') {
+                              try {
+                                await deleteAccount();
+                                Alert.alert('Success', 'Your account has been permanently deleted');
+                              } catch (error) {
+                                console.error('Delete account error:', error);
+                                Alert.alert('Error', 'Failed to delete account. Please try again.');
+                              }
+                            } else {
+                              Alert.alert('Error', 'Please type DELETE exactly to confirm');
+                            }
+                          },
+                        },
+                      ],
+                      'plain-text'
+                    );
+                  },
+                },
+              ]
+            );
+          },
+        },
+      ]
+    );
   };
 
   return (
@@ -64,6 +144,45 @@ export default function ExtraScreen({ navigation }: MainTabScreenProps<'Extra'>)
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
+        {/* User Profile Section - Only visible when logged in */}
+        {user && (
+          <View style={styles.profileSection}>
+            <View style={styles.profileHeader}>
+              <View style={styles.profileIconContainer}>
+                <User size={24} color={colors.gold[500]} />
+              </View>
+              <View style={styles.profileInfo}>
+                <Text style={styles.profileTitle}>Account</Text>
+                <View style={styles.emailContainer}>
+                  <Mail size={14} color={colors.text.secondary} />
+                  <Text style={styles.profileEmail}>{user.email}</Text>
+                </View>
+              </View>
+            </View>
+
+            {/* Account Actions */}
+            <View style={styles.accountActions}>
+              <TouchableOpacity
+                style={styles.signOutButton}
+                onPress={handleSignOut}
+                activeOpacity={0.7}
+              >
+                <LogOut size={18} color={colors.text.primary} />
+                <Text style={styles.signOutButtonText}>Sign Out</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.deleteAccountButton}
+                onPress={handleDeleteAccount}
+                activeOpacity={0.7}
+              >
+                <Trash2 size={18} color='#ff3b30' />
+                <Text style={styles.deleteAccountButtonText}>Delete Account</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.title}>Gold Investment</Text>
@@ -267,5 +386,86 @@ const styles = StyleSheet.create({
     color: colors.text.tertiary,
     lineHeight: 18,
     textAlign: 'center',
+  },
+  // Profile Section Styles
+  profileSection: {
+    backgroundColor: colors.background.secondary,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: colors.border.default,
+  },
+  profileHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border.default,
+  },
+  profileIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: colors.gold[500] + '20',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  profileInfo: {
+    flex: 1,
+  },
+  profileTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.text.primary,
+    marginBottom: 4,
+  },
+  emailContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  profileEmail: {
+    fontSize: 14,
+    color: colors.text.secondary,
+  },
+  accountActions: {
+    gap: 12,
+  },
+  signOutButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: colors.background.primary,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: colors.border.default,
+  },
+  signOutButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.text.primary,
+  },
+  deleteAccountButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#ff3b3015',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#ff3b3030',
+  },
+  deleteAccountButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#ff3b30',
   },
 });
