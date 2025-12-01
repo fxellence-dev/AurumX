@@ -83,23 +83,29 @@ export async function savePushTokenToDatabase(
   supabase: any
 ): Promise<void> {
   try {
-    const { error } = await supabase
+    console.log('💾 Saving push token to database...', { userId, pushToken, platform: Platform.OS });
+    
+    const { data, error } = await supabase
       .from('user_push_tokens')
-      .upsert({
-        user_id: userId,
-        push_token: pushToken,
-        platform: Platform.OS,
-        updated_at: new Date().toISOString(),
-      }, {
-        onConflict: 'user_id,platform'
-      });
+      .upsert(
+        {
+          user_id: userId,
+          push_token: pushToken,
+          platform: Platform.OS,
+          updated_at: new Date().toISOString(),
+        },
+        {
+          onConflict: 'user_id,platform',
+          returning: 'minimal',
+        }
+      );
 
     if (error) {
       console.error('❌ Error saving push token:', error);
       throw error;
     }
 
-    console.log('✅ Push token saved to database');
+    console.log('✅ Push token saved to database', data);
   } catch (error) {
     console.error('❌ Failed to save push token:', error);
     throw error;

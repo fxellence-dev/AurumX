@@ -275,8 +275,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               try {
                 console.log('📱 Registering for push notifications...');
                 const pushToken = await registerForPushNotificationsAsync();
+                console.log('📱 Push token result:', pushToken);
                 
                 if (pushToken) {
+                  console.log('📱 About to save push token for user:', sessionData.session.user.id);
                   await savePushTokenToDatabase(sessionData.session.user.id, pushToken, supabase);
                   console.log('✅ Push token registered and saved');
                 } else {
@@ -284,8 +286,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 }
               } catch (pushError) {
                 console.error('⚠️ Failed to register push notifications:', pushError);
+                console.error('⚠️ Push error details:', JSON.stringify(pushError, null, 2));
                 // Don't throw - push notifications are not critical for sign in
               }
+            } else {
+              console.log('⚠️ No session user found for push token registration');
             }
           } else {
             console.error('❌ No tokens found in callback URL');
@@ -397,8 +402,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // Register for push notifications
       if (data.user) {
-        console.log('📱 Registering for push notifications...');
-        await registerForPushNotificationsAsync();
+        try {
+          console.log('📱 Registering for push notifications...');
+          const pushToken = await registerForPushNotificationsAsync();
+          console.log('📱 Push token result:', pushToken);
+          
+          if (pushToken) {
+            console.log('📱 About to save push token for user:', data.user.id);
+            await savePushTokenToDatabase(data.user.id, pushToken, supabase);
+            console.log('✅ Push token registered and saved');
+          } else {
+            console.log('⚠️ No push token received');
+          }
+        } catch (pushError) {
+          console.error('⚠️ Failed to register push notifications:', pushError);
+        }
       }
     } catch (error) {
       console.error('Email sign-in error:', error);
@@ -437,8 +455,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // Register for push notifications
       if (data.user) {
-        console.log('📱 Registering for push notifications...');
-        await registerForPushNotificationsAsync();
+        try {
+          console.log('📱 Registering for push notifications...');
+          const pushToken = await registerForPushNotificationsAsync();
+          console.log('📱 Push token result:', pushToken);
+          
+          if (pushToken) {
+            console.log('📱 About to save push token for user:', data.user.id);
+            await savePushTokenToDatabase(data.user.id, pushToken, supabase);
+            console.log('✅ Push token registered and saved');
+          } else {
+            console.log('⚠️ No push token received');
+          }
+        } catch (pushError) {
+          console.error('⚠️ Failed to register push notifications:', pushError);
+        }
       }
     } catch (error) {
       console.error('Email sign-up error:', error);
